@@ -1,0 +1,50 @@
+# Build directories
+build/
+bin/
+obj/
+out/
+
+# Compiled executables
+*.exe
+*.out
+*.app
+
+# Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Static libraries
+*.a
+*.lib
+
+# Shared libraries
+*.so
+*.dylib
+*.dll
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Dependency files
+*.d
+
+# Log files
+*.log
+
+# IDE-specific (choose what you use)
+.idea/           # CLion, IntelliJ
+.vscode/         # VS Code
+*.swp            # Vim
+*.swo            # Vim
+*~               # Vim backup
+
+# OS-specific
+.DS_Store        # macOS
+Thumbs.db        # Windows
+
+# Temporary files
+*.tmp
+*.temp
