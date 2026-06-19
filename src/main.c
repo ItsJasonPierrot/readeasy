@@ -16,7 +16,9 @@ int main(int argc, char *argv[]){
     return 1;
   }
   
-  // Prepare buffer and read opened file from previous block, adding newlines so that "say" doesn't stop abruptly on last word
+  // Prepare buffer and read opened file from previous block,
+  // checking if read returns either -1 or 0, and then adding 
+  // newlines so that "say" doesn't stop abruptly on last word
   char buffer[256];
   ssize_t text = read(file,buffer,sizeof(buffer)-3); 
   if(text<0){
