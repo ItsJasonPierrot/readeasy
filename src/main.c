@@ -15,12 +15,14 @@ int main(int argc, char *argv[]){
   }
   
   char buffer[256];
-  ssize_t text = read(file,buffer,sizeof(buffer)-1); 
+  ssize_t text = read(file,buffer,sizeof(buffer)-3); 
   if(text<0){
     write(2,"Error reading file.\n", 20);
     return 1;
   }
-  buffer[text] = '\0';
+  buffer[text] = '\n';
+  buffer[text+1] = '\n';
+  buffer[text+2] = '\0';
 
   pid_t pid = fork();
   if(pid < 0){
