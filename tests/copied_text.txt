@@ -1,0 +1,56 @@
+Ha — first, I genuinely respect that preference, and it's *exactly* the right instinct for learning. `--message` over `-m`, `--all` over `-a` — the long forms *tell you what they mean*, and while you're learning, that readability is worth the extra typing. It's the same reason you write `'\0'` instead of relying on shorthand, and why you wanted long-form understanding over `kickstart.nvim`. The short forms are for when you *already know* and want speed; the long forms are for when you want to *understand*. You're in understanding mode. Good. (And yes — `malloc` = **m**emory **alloc**ate. Annoyingly abbreviated, like half of C. We'll spell out what it does so the shorthand name doesn't hide the meaning.)
+
+So let's go under the hood properly. You want to *understand* malloc, not just use it — the Ihsan way. Let me build the real picture.
+
+**First, the honest framing: what *is* "the heap," really?**
+
+When your program runs, the operating system gives it a chunk of memory to work with. That memory is divided into regions, and two matter here:
+
+1. **The stack** — where your local variables live (`int x`, `char buffer[256]`). It's called a "stack" because it works like a stack of plates: when a function is called, its variables get *pushed* on top; when the function returns, they get *popped* off (automatically cleaned up). It's fast and automatic, *but* — the size of everything on it must be known when you compile, and it's limited in size (a few MB). That's why `char buffer[256]` needs a fixed number.
+
+2. **The heap** — a *big, separate pool* of memory that your program can request pieces of *while running*. It's not automatic — *you* ask for chunks (`malloc`) and *you* give them back (`free`). It's much larger than the stack and the sizes are decided at runtime. This is where `malloc` operates.
+
+So "malloc allocates on the heap" means: **it carves out a piece of that big runtime pool and hands you a pointer to it.**
+
+**What malloc *actually does*, under the hood:**
+
+When you call `malloc(1000)`, here's the real sequence:
+
+1. malloc looks at the heap — a pool of memory it manages — and **finds a free chunk of at least 1000 bytes.**
+2. It **marks that chunk as "in use"** (so future malloc calls won't hand out the same memory) and records its size internally (so `free` later knows how much to release).
+3. It **returns a pointer** — the *address* of the start of that chunk. *(This is why pointers matter — malloc's whole return value is an address. The thing you just learned with `&` and `*` is literally what malloc gives you.)*
+4. That memory is **yours** until you call `free` on that pointer.
+
+So malloc is a **bookkeeper for the heap.** It tracks which parts of the pool are free and which are handed out. When you ask, it finds free space, marks it used, gives you the address. When you `free`, it marks that space available again. That's the core mechanism — it's managing a big pool, tracking who's using what.
+
+**The crucial under-the-hood detail — malloc remembers the size, you don't:**
+
+Here's something genuinely interesting: when you `free(buffer)`, you *don't* tell it how big the chunk was — you just give it the pointer. How does `free` know how many bytes to release? Because **malloc secretly stored the size** (usually in a few hidden bytes *just before* the address it gave you). So every malloc'd block has invisible "bookkeeping" metadata attached, recording its size. `free` reads that hidden size to know what to release. (This is why you can't `free` a pointer malloc didn't give you — there's no valid bookkeeping there, and it corrupts the heap.)
+
+**Why the heap is "slower" and "manual" — the tradeoff, honestly:**
+
+The stack is fast because it's dead simple — push/pop, no searching. The heap is slower because malloc has to *search* for a suitable free chunk, track metadata, and deal with **fragmentation** (over time, as you malloc and free different sizes, the pool gets pocked with gaps — like a parking lot with cars parked unevenly, leaving spaces too small to use). Managing all that takes work. That's the cost of the flexibility. You pay a little speed and take on the responsibility, in exchange for "any size, any time, lasts as long as I want."
+
+**The mental model, complete:**
+
+> The **heap** is a big parking lot. **malloc** is the attendant: you say "I need space for a bus" (1000 bytes), the attendant finds an empty stretch big enough, marks it reserved, and hands you a ticket with the *location* (the pointer). The space is yours until you return the ticket (**free**). The attendant secretly notes how big your spot was (the hidden size) so when you return the ticket, they know exactly how much to free up. If you lose the ticket without returning it (lose the pointer without freeing), that spot stays reserved forever — nobody can use it — that's a **leak**.
+
+**Connecting it to what you already know — the resource-pairing pattern:**
+
+You've now seen this exact shape *three times*:
+- `open` ↔ `close` (file descriptors)
+- `fork` ↔ `wait` (child processes)
+- `malloc` ↔ `free` (heap memory)
+
+Every one: *acquire a resource, you're responsible for releasing it.* Same discipline, same danger if you forget (leaked descriptor, zombie process, leaked memory). So malloc/free isn't a *new* concept — it's a *familiar* concept (resource ownership) applied to memory. You already have the instinct; you're just pointing it at a new resource. *That's* the hook to what you know.
+
+---
+
+That's the under-the-hood picture: malloc is a bookkeeper managing a big runtime memory pool, finding free chunks, marking them used, returning their address (a pointer), and secretly recording sizes so `free` can release them. The heap gives flexibility (runtime sizing, long lifetime) at the cost of speed and *your* responsibility to free.
+
+**Quick check the model landed — in your own words:**
+1. What's the difference between stack and heap (who decides the size, who cleans up)?
+2. What does malloc actually *return* — and why does that connect to the `&`/`*` pointer stuff you just learned?
+3. What's a memory leak, in the parking-lot terms?
+
+Answer those three, and then we *do* it — and the perfect first malloc is rewriting readeasy's `char buffer[65536]` guess into `malloc`'d memory sized to the actual input. That turns this whole under-the-hood understanding into a real improvement to your tool. But first — the three checks. 🐚
