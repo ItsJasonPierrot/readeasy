@@ -7,21 +7,26 @@
 int run_ui(char *text){
   pid_t pid;
   int speaking = 0;
+
   initscr();
   clear();
-
   noecho();
   cbreak();
 
-  printw("%s", text);
-  refresh();
-  
+  WINDOW *win = newwin(50, 200, 3, 3);
+  keypad(win, TRUE);
+  scrollok(win, TRUE);
+
+  wprintw(win, "%s", text);
+  wrefresh(win);
+
   while(1){
-    int character = getch();
+    int character = wgetch(win);
 
     if(character == ' '){
       if(!speaking){
-        if(speak(text,&pid) != 0){
+        if(speak(text, &pid) != 0){
+          delwin(win);
           endwin();
           return 1;
         }
@@ -42,12 +47,13 @@ int run_ui(char *text){
     }
 
     if(speaking){
-      if(waitpid(pid,NULL,WNOHANG) > 0){
+      if(waitpid(pid, NULL, WNOHANG) > 0){
         speaking = 0;
       }
     }
   }  
   
+  delwin(win);
   endwin();
   return 0;
 }

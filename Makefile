@@ -1,5 +1,15 @@
-readeasy: src/main.c src/input.c src/speech.c src/ui.c
-	cc -Iinclude src/main.c src/input.c src/speech.c src/ui.c -o readeasy -lncurses
+CC = cc
+CFLAGS = -Wall -Wextra -Iinclude
+LDLIBS = -lncurses
+
+SRC = src/main.c src/input.c src/speech.c src/ui.c
+OBJ = $(SRC:.c=.o)
+
+readeasy: $(OBJ)
+	$(CC) $(OBJ) -o $@ $(LDLIBS)
+
+src/%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f readeasy
+	rm -f $(OBJ) readeasy
