@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/wait.h>
 #include "speech.h"
 #include "ui.h"
@@ -7,26 +8,46 @@
 int run_ui(char *text){
   pid_t pid;
   int speaking = 0;
+  int rows, cols;
+  int newlines = 0;
+  int pad_height;
+  int top = 0;
+  int character;
+  char *p;
+  WINDOW *pad;
 
   initscr();
-  clear();
   noecho();
   cbreak();
+  keypad(stdscr, TRUE);
 
-  WINDOW *win = newwin(50, 200, 3, 3);
-  keypad(win, TRUE);
-  scrollok(win, TRUE);
+  getmaxyx(stdscr, rows, cols);
 
-  wprintw(win, "%s", text);
-  wrefresh(win);
+  for (p = text; *p; p++)
+    if(*p == '\n') newlines++;
+  pad_height = (strlen(text) / cols) + newlines + 2;
+
+  pad = newpad(pad_height, cols);
+  waddstr(pad, text);
+
+  prefresh(pad, top, 0, 0, 0, rows - 1, cols - 1);
 
   while(1){
-    int character = wgetch(win);
+    character = getch();
+
+    if(character == KEY_DOWN){
+      if(top < pad_height - rows) top++;
+      prefresh(pad, top, 0, 0, 0, rows - 1, cols - 1);
+    }
+
+    if(character == KEY_UP){
+      if(top > 0) top--;
+      prefresh(pad, top, 0, 0, 0, rows - 1, cols - 1);
+    }
 
     if(character == ' '){
       if(!speaking){
         if(speak(text, &pid) != 0){
-          delwin(win);
           endwin();
           return 1;
         }
@@ -53,7 +74,7 @@ int run_ui(char *text){
     }
   }  
   
-  delwin(win);
+  delwin(pad);
   endwin();
   return 0;
 }
