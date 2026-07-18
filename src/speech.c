@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-int speak(char *text, pid_t *pid){
+int speak(const char *text, pid_t *pid){
   *pid = fork();
 
   if(*pid < 0){

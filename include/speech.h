@@ -2,6 +2,6 @@
 #define SPEECH_H
 #include <sys/types.h>    
 
-int speak(char *text, pid_t *pid);
+int speak(const char *text, pid_t *pid);
 
 #endif

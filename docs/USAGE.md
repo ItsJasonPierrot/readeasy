@@ -49,11 +49,15 @@ While a file is open, these keys work:
 
 | Key | Action |
 | --- | --- |
-| `Space` | Toggle speech. First press starts reading aloud; next press stops it. |
+| `Space` | Toggle speech. First press starts reading aloud from the top of the text currently visible on screen; next press stops it. |
+| `↑` | Scroll up. |
+| `↓` | Scroll down. |
 | `q` | Quit `readeasy`. If speech is playing, it stops first. |
 
-Speech also stops on its own when it reaches the end of the text. You can then
-press `Space` to read it again from the start.
+Speech starts from wherever you've scrolled to, not always from the
+beginning of the file — scroll with `↑`/`↓` first if you want to jump ahead.
+Speech also stops on its own when it reaches the end of the text. You can
+then press `Space` to read from the top of the visible screen again.
 
 ---
 
@@ -96,6 +100,8 @@ man ls | col -b | ./readeasy
 | --- | --- | --- |
 | Maximum text size | ~64 KB | About 10,000 words. Text beyond this is not loaded. |
 | Formatting | Plain text only | Markdown, HTML, and PDF symbols are read literally. |
+| Control characters | Converted to spaces | Stray control bytes (e.g. form-feed page breaks from PDF-to-text extraction) are replaced with spaces so they don't render as garbled symbols. |
+| Unicode display | Requires `ncursesw` | Multi-byte UTF-8 characters (accented letters, etc.) only render correctly if `readeasy` was built against wide-character ncurses. See [CONTRIBUTING.md](CONTRIBUTING.md). |
 | Speech engine | macOS `say` | Speech is unavailable on systems without `say`. |
 
 ---

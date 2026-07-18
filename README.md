@@ -24,18 +24,29 @@ You need three things to build and run `readeasy`:
 | Tool | What it is | Needed for |
 | --- | --- | --- |
 | A C compiler (`cc` / `gcc` / `clang`) | Turns the source code into a program | Building |
-| `ncurses` | A library for drawing terminal windows | Building & running |
+| `ncursesw` (wide-character ncurses) | A library for drawing terminal windows | Building & running |
 | `say` | A text-to-speech command | Reading aloud |
+
+`readeasy` needs the **wide-character** build of ncurses (`ncursesw`), not the
+plain/narrow one. Without it, accented and non-ASCII characters — common in
+text copied from PDFs — show up as garbled symbols instead of the correct
+character.
 
 ### Platform support
 
-- **macOS** — fully supported. The `say` command and `ncurses` ship with
-  macOS, so there is nothing extra to install.
+- **macOS** — the `say` command ships with macOS, but the system's built-in
+  `ncurses` is the narrow build. Install the wide-character version with
+  Homebrew before building:
+  ```bash
+  brew install ncurses
+  ```
+  `make` detects it automatically and links against it.
 - **Linux** — the terminal view works, but speech does **not** work out of the
   box. macOS has `say`; Linux does not. To get speech on Linux you would need
   to install a speech tool such as `espeak` and change the program to call it
   instead of `say` (see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)). You also
-  need the ncurses development package, e.g. `sudo apt install libncurses-dev`.
+  need the wide-character ncurses development package, e.g.
+  `sudo apt install libncursesw5-dev`.
 - **Windows** — not supported.
 
 ---
@@ -93,7 +104,8 @@ Once the file is open, use these keys:
 
 | Key | What it does |
 | --- | --- |
-| `Space` | Start reading aloud. Press again to stop. |
+| `Space` | Start reading aloud from the top of the text currently on screen. Press again to stop. |
+| `↑` / `↓` | Scroll the text up or down. |
 | `q` | Quit the program. |
 
 A full reference — including every error message and limit — is in
@@ -107,6 +119,9 @@ A full reference — including every error message and limit — is in
   beyond that is not loaded.
 - It reads plain text. It does not interpret Markdown, HTML, or PDF formatting —
   symbols like `#` or `*` are read aloud as written.
+- Stray control characters (such as the page-break form feeds left behind by
+  PDF-to-text extraction) are converted to spaces so they don't show up as
+  garbled symbols on screen.
 
 ---
 

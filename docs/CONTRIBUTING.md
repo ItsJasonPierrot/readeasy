@@ -34,15 +34,23 @@ its public functions.
 You need:
 
 - A C compiler — `cc`, `gcc`, or `clang`.
-- The **ncurses** development library.
+- The **wide-character ncurses** development library (`ncursesw`), not the
+  narrow/plain build. The narrow build renders multi-byte UTF-8 text (e.g.
+  accented characters pulled from a PDF) as garbage instead of the correct
+  character.
 - The **say** command for speech (built into macOS).
 
-On **macOS**, everything is already installed.
-
-On **Linux**, install ncurses first:
+On **macOS**, `say` is built in, but the system `ncurses` is the narrow
+build. Install the wide-character version first:
 
 ```bash
-sudo apt install build-essential libncurses-dev
+brew install ncurses
+```
+
+On **Linux**, install the wide-character ncurses package:
+
+```bash
+sudo apt install build-essential libncursesw5-dev
 ```
 
 Note: speech will not work on Linux until the code is changed to use a Linux
@@ -59,7 +67,10 @@ make
 ```
 
 This compiles every file in `src/` and links them with ncurses to produce the
-`readeasy` executable.
+`readeasy` executable. The `Makefile` looks for `ncursesw6-config` (checking
+Homebrew's keg-only install path on macOS too) and uses it to link against
+the wide-character library; if it can't find that tool it falls back to
+plain `-lncursesw`.
 
 To remove the executable and the compiled object files:
 
@@ -78,13 +89,17 @@ change, rebuild and try a few cases:
 make
 ./readeasy tests/longer_text.txt     # a normal file
 ./readeasy tests/empty.txt           # should say "File is empty"
+./readeasy tests/pdf.txt             # accented characters and page breaks
 echo "hello world" | ./readeasy      # piped input
 ./readeasy tests/a tests/b           # two args: should show usage error
 ```
 
 Check that:
 
-- The text appears correctly on screen.
+- The text appears correctly on screen, including accented/non-ASCII
+  characters (see `tests/pdf.txt`) — no garbled symbols.
+- `↑` / `↓` scroll the text, and `Space` starts reading from the top of
+  whatever is currently visible on screen, not always from the beginning.
 - `Space` starts and stops the voice.
 - `q` quits cleanly and returns you to the shell.
 - Each error case prints the expected message.
