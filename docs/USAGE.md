@@ -23,12 +23,14 @@ command | readeasy
 ## Description
 
 `readeasy` loads a text file into a terminal window and can read it aloud using
-the system text-to-speech command (`say`). It takes input in one of two ways:
+the system text-to-speech command (`say`), playing the audio with `afplay`. It
+takes input in one of two ways:
 
 1. **A filename** passed as an argument.
 2. **Piped input** from another command, when no filename is given.
 
-The text is shown on screen. You then control the speech with the keyboard.
+The text is re-flowed to the window width and shown on screen. You then control
+the speech with the keyboard, one sentence at a time.
 
 ---
 
@@ -49,15 +51,39 @@ While a file is open, these keys work:
 
 | Key | Action |
 | --- | --- |
-| `Space` | Toggle speech. First press starts reading aloud from the top of the text currently visible on screen; next press stops it. |
-| `↑` | Scroll up. |
-| `↓` | Scroll down. |
+| `↑` | Move the cursor up one sentence. |
+| `↓` | Move the cursor down one sentence. |
+| `Space` | Start reading aloud from the cursor sentence; press again to pause. |
+| `Ctrl-L` | Redraw the screen (see *Recovering the display* below). |
 | `q` | Quit `readeasy`. If speech is playing, it stops first. |
 
-Speech starts from wherever you've scrolled to, not always from the
-beginning of the file — scroll with `↑`/`↓` first if you want to jump ahead.
-Speech also stops on its own when it reaches the end of the text. You can
-then press `Space` to read from the top of the visible screen again.
+### The cursor and sentence tracking
+
+`readeasy` reads one **sentence** at a time. One sentence is always
+highlighted — this is the **cursor**. It marks where reading will begin and
+shows which sentence you are on.
+
+- Move the cursor with `↑` / `↓`.
+- Press `Space` to start reading from the cursor sentence. As each sentence
+  finishes, the highlight advances to the next one, so the cursor always
+  shows the sentence currently being read.
+- Press `Space` again to **pause**. The cursor stays on the sentence that
+  was being read.
+- Press `Space` once more to **resume** from that same sentence — unless you
+  moved the cursor while paused, in which case reading resumes from the new
+  cursor sentence. (Moving the cursor with `↑` / `↓` while reading pauses
+  playback.)
+- Reading stops on its own at the end of the text.
+
+While a sentence is playing, `readeasy` synthesizes the next one in the
+background so playback moves from one sentence to the next without a
+noticeable gap.
+
+### Recovering the display
+
+Some terminals leave the screen stale after you switch away to another tab
+or window and back. Press `Ctrl-L` to force a full redraw. `readeasy` also
+redraws automatically when the terminal is resized.
 
 ---
 
@@ -100,9 +126,11 @@ man ls | col -b | ./readeasy
 | --- | --- | --- |
 | Maximum text size | ~64 KB | About 10,000 words. Text beyond this is not loaded. |
 | Formatting | Plain text only | Markdown, HTML, and PDF symbols are read literally. |
+| Re-flow | Fills window width | Hard-wrapped lines are joined and re-wrapped to the terminal; short lines (e.g. headings) are kept separate. |
+| Sentence splitting | On `.` `!` `?` | Boundaries are detected heuristically, so unusual punctuation may split a little early or late. |
 | Control characters | Converted to spaces | Stray control bytes (e.g. form-feed page breaks from PDF-to-text extraction) are replaced with spaces so they don't render as garbled symbols. |
 | Unicode display | Requires `ncursesw` | Multi-byte UTF-8 characters (accented letters, etc.) only render correctly if `readeasy` was built against wide-character ncurses. See [CONTRIBUTING.md](CONTRIBUTING.md). |
-| Speech engine | macOS `say` | Speech is unavailable on systems without `say`. |
+| Speech engine | macOS `say` + `afplay` | Speech is unavailable on systems without both commands. |
 
 ---
 

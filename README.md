@@ -26,6 +26,11 @@ You need three things to build and run `readeasy`:
 | A C compiler (`cc` / `gcc` / `clang`) | Turns the source code into a program | Building |
 | `ncursesw` (wide-character ncurses) | A library for drawing terminal windows | Building & running |
 | `say` | A text-to-speech command | Reading aloud |
+| `afplay` | An audio-file player | Reading aloud |
+
+`say` and `afplay` both ship with macOS. `readeasy` synthesizes each sentence
+with `say` and plays it with `afplay`, preparing the next sentence while the
+current one is still playing so the audio doesn't stutter between sentences.
 
 `readeasy` needs the **wide-character** build of ncurses (`ncursesw`), not the
 plain/narrow one. Without it, accented and non-ASCII characters — common in
@@ -104,9 +109,16 @@ Once the file is open, use these keys:
 
 | Key | What it does |
 | --- | --- |
-| `Space` | Start reading aloud from the top of the text currently on screen. Press again to stop. |
-| `↑` / `↓` | Scroll the text up or down. |
+| `↑` / `↓` | Move the highlighted cursor up or down one sentence. |
+| `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
+| `Ctrl-L` | Redraw the screen (useful if it looks stale after switching terminal tabs). |
 | `q` | Quit the program. |
+
+`readeasy` re-flows the text to fill your terminal width and reads it one
+**sentence** at a time. The highlighted sentence is the **cursor** — it marks
+where reading starts and, while speech plays, it advances sentence by sentence
+so you can see what is being read. If you pause and then press `Space` again
+without moving the cursor, reading picks up from the same sentence.
 
 A full reference — including every error message and limit — is in
 [docs/USAGE.md](docs/USAGE.md).
@@ -122,6 +134,10 @@ A full reference — including every error message and limit — is in
 - Stray control characters (such as the page-break form feeds left behind by
   PDF-to-text extraction) are converted to spaces so they don't show up as
   garbled symbols on screen.
+- Text is re-flowed to your window width, so files that were hard-wrapped at a
+  narrow column (common in text exported from PDFs) still fill the screen.
+  Short lines such as headings are kept on their own; sentence boundaries are
+  detected from `.`, `!`, and `?`.
 
 ---
 

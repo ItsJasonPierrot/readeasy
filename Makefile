@@ -15,7 +15,7 @@ else
   LDLIBS := -lncursesw
 endif
 
-SRC = src/main.c src/input.c src/speech.c src/ui.c
+SRC = src/main.c src/input.c src/speech.c src/ui.c src/reflow.c
 OBJ = $(SRC:.c=.o)
 
 readeasy: $(OBJ)

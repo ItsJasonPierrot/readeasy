@@ -15,8 +15,9 @@ readeasy/
 ├── src/            C source files
 │   ├── main.c      Program entry point and argument handling
 │   ├── input.c     Reads the file or piped input into a buffer
-│   ├── speech.c    Starts the text-to-speech process (say)
-│   └── ui.c        Terminal interface and keyboard controls (ncurses)
+│   ├── reflow.c    Re-flows text and splits it into sentences
+│   ├── speech.c    Synthesizes (say) and plays (afplay) sentence audio
+│   └── ui.c        Terminal interface, keyboard controls, playback (ncurses)
 ├── include/        Header files (.h) for each source module
 ├── docs/           Documentation
 ├── tests/          Sample text files used for manual testing
@@ -26,6 +27,10 @@ readeasy/
 
 Each `.c` file in `src/` has a matching `.h` file in `include/` that declares
 its public functions.
+
+`ui.c` keeps the next sentence's audio prepared while the current one plays:
+`speech.c` writes each sentence to a temporary file with `say -o` and plays it
+with `afplay`, so playback moves between sentences without a gap.
 
 ---
 
@@ -38,10 +43,11 @@ You need:
   narrow/plain build. The narrow build renders multi-byte UTF-8 text (e.g.
   accented characters pulled from a PDF) as garbage instead of the correct
   character.
-- The **say** command for speech (built into macOS).
+- The **say** and **afplay** commands for speech and audio playback (both
+  built into macOS).
 
-On **macOS**, `say` is built in, but the system `ncurses` is the narrow
-build. Install the wide-character version first:
+On **macOS**, `say` and `afplay` are built in, but the system `ncurses` is the
+narrow build. Install the wide-character version first:
 
 ```bash
 brew install ncurses
@@ -96,12 +102,17 @@ echo "hello world" | ./readeasy      # piped input
 
 Check that:
 
-- The text appears correctly on screen, including accented/non-ASCII
-  characters (see `tests/pdf.txt`) — no garbled symbols.
-- `↑` / `↓` scroll the text, and `Space` starts reading from the top of
-  whatever is currently visible on screen, not always from the beginning.
-- `Space` starts and stops the voice.
-- `q` quits cleanly and returns you to the shell.
+- The text fills the window width, including accented/non-ASCII characters
+  (see `tests/pdf.txt`) — no garbled symbols, no narrow column left over from
+  a hard-wrapped file.
+- `↑` / `↓` move the highlighted cursor sentence, and `Space` starts reading
+  from the cursor sentence, not always from the beginning.
+- While reading, the highlight advances sentence by sentence and the audio
+  moves between sentences without a long gap.
+- Pausing with `Space` leaves the cursor on the current sentence; pressing
+  `Space` again resumes from that sentence (unless the cursor was moved).
+- `q` quits cleanly and returns you to the shell (no leftover `readeasy.*`
+  directories in your temp folder).
 - Each error case prints the expected message.
 
 ---
@@ -125,18 +136,19 @@ Keep the style consistent with the existing code:
 
 ## Adding Linux speech support
 
-Speech currently uses the macOS-only `say` command, called in `src/speech.c`:
+Speech currently uses the macOS-only `say` and `afplay` commands in
+`src/speech.c`: `synth_to_file()` writes a sentence to an audio file with
+`say -o`, and `play_file()` plays it with `afplay`:
 
 ```c
-execlp("say", "say", text, NULL);
+execlp("say", "say", "-o", path, text, (char *)NULL);   /* synth_to_file */
+execlp("afplay", "afplay", path, (char *)NULL);          /* play_file */
 ```
 
-To support Linux, you would detect the platform (or add a build option) and call
-a Linux speech tool such as `espeak` instead:
-
-```c
-execlp("espeak", "espeak", text, NULL);
-```
+To support Linux, you would detect the platform (or add a build option) and use
+Linux tools instead — for example synthesizing with `espeak -w file.wav` and
+playing with `aplay`, or having a single tool both synthesize and play. Keep
+the synth/play split so the next-sentence prefetch in `ui.c` still works.
 
 If you take this on, please keep macOS working and document any new dependency.
 
