@@ -20,10 +20,6 @@ int process_buffer(int input_text, char *buffer){
     return 1;
   }
 
-  /* Replace stray control bytes (e.g. form feeds from PDF page breaks)
-   * with spaces so they don't render as garbage glyphs. Safe for UTF-8:
-   * control bytes are all < 0x20, and UTF-8 continuation/lead bytes are
-   * always >= 0x80, so this can't corrupt a multi-byte sequence. */
   for(int i = 0; i < total; i++){
     unsigned char c = buffer[i];
     if(c < 0x20 && c != '\n' && c != '\t'){

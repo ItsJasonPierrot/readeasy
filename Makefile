@@ -1,10 +1,6 @@
 CC = cc
 CFLAGS = -Wall -Wextra -Iinclude
 
-# Use wide-character ncurses (ncursesw) so multi-byte UTF-8 text renders
-# correctly instead of as mojibake. Homebrew's ncurses is keg-only on
-# macOS (not symlinked onto PATH), so check its opt path too. Falls back
-# to plain -lncursesw if no config tool is found.
 NCURSESW_CONFIG := $(firstword $(wildcard /opt/homebrew/opt/ncurses/bin/ncursesw6-config) \
                                 $(wildcard /usr/local/opt/ncurses/bin/ncursesw6-config) \
                                 $(shell command -v ncursesw6-config 2>/dev/null))

@@ -3,7 +3,6 @@
 #include <string.h>
 #include <ctype.h>
 
-/* Grow *buf to at least `need` bytes. Returns 0 on success, -1 on failure. */
 static int ensure(char **buf, size_t *cap, size_t need){
   if(*cap >= need) return 0;
   size_t nc = *cap ? *cap : 128;
@@ -15,8 +14,6 @@ static int ensure(char **buf, size_t *cap, size_t need){
   return 0;
 }
 
-/* Append a trimmed copy of s[0..len) to the sentence array. Empty after
- * trimming is ignored. Returns 0 on success, -1 on failure. */
 static int push_sentence(char ***arr, int *n, int *cap, const char *s, size_t len){
   while(len > 0 && isspace((unsigned char)s[0]))       { s++; len--; }
   while(len > 0 && isspace((unsigned char)s[len-1]))    { len--; }
@@ -37,9 +34,6 @@ static int push_sentence(char ***arr, int *n, int *cap, const char *s, size_t le
   return 0;
 }
 
-/* Split a single-spaced block into sentences. A sentence ends at . ! ? that
- * is followed by whitespace or end-of-block (so decimals and "e.g." don't
- * split), including any closing quote/bracket that trails the punctuation. */
 static int split_block(char ***arr, int *n, int *cap, const char *b, size_t blen){
   size_t i = 0;
   while(i < blen){
@@ -55,7 +49,7 @@ static int split_block(char ***arr, int *n, int *cap, const char *b, size_t blen
           found = 1;
           break;
         }
-        k = m;              /* not a real boundary; keep scanning */
+        k = m;
       } else {
         k++;
       }
@@ -72,8 +66,6 @@ char **build_sentences(const char *text, int *nsent){
   char **arr = NULL;
   int n = 0, cap = 0;
 
-  /* Widest line in the file ~= the wrap column. Lines much shorter than this
-   * are treated as deliberate breaks (headings, paragraph ends). */
   int maxw = 0, run = 0;
   for(const char *p = text; ; p++){
     if(*p == '\n' || *p == '\0'){
@@ -116,7 +108,7 @@ char **build_sentences(const char *text, int *nsent){
       memcpy(para + plen, linestart, ll);
       plen += ll;
 
-      if((int)ll < threshold){        /* short line ends the block */
+      if((int)ll < threshold){
         if(split_block(&arr, &n, &cap, para, plen) < 0){ failed = 1; break; }
         plen = 0;
       }

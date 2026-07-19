@@ -9,12 +9,6 @@
 #include "reflow.h"
 #include "ui.h"
 
-/* Playback runs a tiny pipeline so audio doesn't stutter between sentences:
- * while one sentence plays, the next is already being synthesized to a file.
- *   STOPPED  - nothing playing
- *   SYNTH    - synthesizing the current sentence; play it once ready
- *   PLAY     - current sentence playing; next is prefetching in the background
- */
 enum { STOPPED, SYNTH, PLAY };
 
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr);
@@ -27,18 +21,17 @@ int run_ui(char *text){
   int rows, cols;
   int pad_height, content_rows;
   int top = 0;
-  int cur = 0;             /* current sentence: highlighted, and where speech begins */
+  int cur = 0;
   int nsent = 0;
   int character;
-  int *sent_row = NULL;    /* pad row each sentence starts on */
+  int *sent_row = NULL;
   char **sent;
   WINDOW *pad;
 
-  /* Audio pipeline state. */
   int astate = STOPPED;
   pid_t synth_pid = 0, play_pid = 0;
-  int synth_i = -1;        /* sentence being synthesized, or -1 */
-  int ready = -1;          /* sentence whose prefetched audio is ready in pnext, or -1 */
+  int synth_i = -1;
+  int ready = -1;
   char patha[64], pathb[64];
   char *pcur = patha, *pnext = pathb, *pswap;
   char tmpl[] = "/tmp/readeasy.XXXXXX";
@@ -54,16 +47,11 @@ int run_ui(char *text){
     init_color(COLOR_BLUE,   60, 100, 250);
     init_color(COLOR_YELLOW, 1000, 780, 560);
   }
-  init_pair(1, COLOR_YELLOW, COLOR_BLUE);   /* keep this line as-is */
+  init_pair(1, COLOR_YELLOW, COLOR_BLUE);
   noecho();
   cbreak();
   keypad(stdscr, TRUE);
 
-  /* Recognize the arrow keys in both "normal" (ESC [ A) and "application"
-   * (ESC O A) cursor-key encodings. Some terminals (e.g. Ghostty) reset
-   * the cursor-key mode when you switch away to another tab and back; if
-   * that happens the arrows arrive in the other encoding, and without
-   * these fallbacks ncurses would stop recognizing them. */
   define_key("\033[A", KEY_UP);
   define_key("\033[B", KEY_DOWN);
   define_key("\033OA", KEY_UP);
@@ -71,13 +59,10 @@ int run_ui(char *text){
 
   getmaxyx(stdscr, rows, cols);
 
-  /* Color the whole physical screen, not just the pad, so short text still
-   * fills the window instead of leaving the terminal's default background. */
   wbkgd(stdscr, COLOR_PAIR(1));
   clear();
   refresh();
 
-  /* Two temp files hold the current and prefetched sentence audio. */
   tmpdir = mkdtemp(tmpl);
   audio_ok = (tmpdir != NULL) && (sent != NULL);
   if(audio_ok){
@@ -85,9 +70,6 @@ int run_ui(char *text){
     snprintf(pathb, sizeof pathb, "%s/b.aiff", tmpdir);
   }
 
-  /* Lay the sentences out re-flowed to the window width: each sentence is
-   * written as its own block and ncurses wraps it at `cols`, so long
-   * sentences fill the width instead of the file's original narrow wrap. */
   {
     int total = 0;
     for(int i = 0; i < nsent; i++) total += (int)strlen(sent[i]);
@@ -126,7 +108,7 @@ int run_ui(char *text){
     timeout(astate == STOPPED ? -1 : 100);
     character = getch();
 
-    if(character == KEY_RESIZE || character == 12 /* Ctrl-L */){
+    if(character == KEY_RESIZE || character == 12){
       getmaxyx(stdscr, rows, cols);
       flushinp();
       wbkgd(stdscr, COLOR_PAIR(1));
@@ -141,7 +123,7 @@ int run_ui(char *text){
     }
 
     if((character == KEY_DOWN || character == KEY_UP) && nsent > 0){
-      if(astate != STOPPED){          /* moving the cursor pauses playback */
+      if(astate != STOPPED){
         stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
         astate = STOPPED;
       }
@@ -153,7 +135,6 @@ int run_ui(char *text){
 
     if(character == ' ' && nsent > 0 && audio_ok){
       if(astate == STOPPED){
-        /* Start: synthesize the current sentence, then play it. */
         if(synth_to_file(sent[cur], pcur, &synth_pid) == 0){
           synth_i = cur;
           astate = SYNTH;
@@ -169,13 +150,12 @@ int run_ui(char *text){
       break;
     }
 
-    /* Drive the audio pipeline. */
     if(astate == SYNTH){
       if(waitpid(synth_pid, NULL, WNOHANG) > 0){
         synth_i = -1;
         if(play_file(pcur, &play_pid) == 0){
           astate = PLAY;
-          if(cur + 1 < nsent &&                       /* prefetch the next one */
+          if(cur + 1 < nsent &&
              synth_to_file(sent[cur+1], pnext, &synth_pid) == 0){
             synth_i = cur + 1;
             ready = -1;
@@ -186,7 +166,7 @@ int run_ui(char *text){
       }
     } else if(astate == PLAY){
       if(synth_i >= 0 && waitpid(synth_pid, NULL, WNOHANG) > 0){
-        ready = synth_i;            /* prefetched audio is now on disk */
+        ready = synth_i;
         synth_i = -1;
       }
       if(waitpid(play_pid, NULL, WNOHANG) > 0){
@@ -196,7 +176,7 @@ int run_ui(char *text){
           int old = cur;
           cur++;
           goto_line(pad, sent_row, content_rows, rows, cols, &top, old, cur);
-          pswap = pcur; pcur = pnext; pnext = pswap;   /* cur's audio is in pnext */
+          pswap = pcur; pcur = pnext; pnext = pswap;
           if(ready == cur){
             ready = -1;
             if(play_file(pcur, &play_pid) == 0){
@@ -209,7 +189,7 @@ int run_ui(char *text){
               astate = STOPPED;
             }
           } else if(synth_i == cur){
-            astate = SYNTH;          /* still synthesizing cur; play when ready */
+            astate = SYNTH;
           } else if(synth_to_file(sent[cur], pcur, &synth_pid) == 0){
             synth_i = cur;
             astate = SYNTH;
@@ -233,14 +213,11 @@ int run_ui(char *text){
   return 0;
 }
 
-/* Set the color/attribute of every pad row that sentence i occupies. */
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr){
   for(int r = row[i]; r < row[i+1]; r++)
     mvwchgat(pad, r, 0, -1, attr, 1, NULL);
 }
 
-/* Move the highlight from `old` to `cur`, scroll so `cur` is visible, and
- * repaint. Pass old == -1 to only paint the new line. */
 static void goto_line(WINDOW *pad, const int *row, int content_rows,
                       int rows, int cols, int *top, int old, int cur){
   if(old >= 0 && old != cur) paint_line(pad, row, old, A_NORMAL);
@@ -259,7 +236,6 @@ static void goto_line(WINDOW *pad, const int *row, int content_rows,
   prefresh(pad, *top, 0, 0, 0, rows - 1, cols - 1);
 }
 
-/* Kill and reap any running synth/play processes. */
 static void stop_audio(pid_t *synth_pid, pid_t *play_pid,
                        int *synth_i, int *ready){
   if(*play_pid > 0){
