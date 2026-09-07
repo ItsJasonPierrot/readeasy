@@ -46,6 +46,8 @@ static void on_signal(int sig){
   raise(sig);
 }
 
+static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
+                         int *sent_row, int *content_rows);
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr);
 static void goto_line(WINDOW *pad, const int *row, int content_rows,
                       int rows, int cols, int *top, int old, int cur);
@@ -54,7 +56,7 @@ static void stop_audio(pid_t *synth_pid, pid_t *play_pid,
 
 int run_ui(char *text){
   int rows, cols;
-  int pad_height, content_rows;
+  int content_rows;
   int top = 0;
   int cur = 0;
   int nsent = 0;
@@ -105,35 +107,20 @@ int run_ui(char *text){
     snprintf(audio_b, sizeof audio_b, "%s/b.aiff", audio_dir);
   }
 
-  {
-    int total = 0;
-    for(int i = 0; i < nsent; i++) total += (int)strlen(sent[i]);
-    pad_height = total / cols + 2 * nsent + 4;
-    if(pad_height < rows + 1) pad_height = rows + 1;
-  }
-
-  pad = newpad(pad_height, cols);
-  wbkgd(pad, COLOR_PAIR(1));
-
   sent_row = malloc((size_t)(nsent + 1) * sizeof(int));
   if(sent_row == NULL){
-    delwin(pad);
     free_sentences(sent, nsent);
     cleanup();
     return 1;
   }
-  sent_row[0] = 0;
-  {
-    int y, x;
-    for(int i = 0; i < nsent; i++){
-      waddstr(pad, sent[i]);
-      waddch(pad, '\n');
-      getyx(pad, y, x);
-      (void)x;
-      sent_row[i+1] = y;
-    }
+
+  pad = build_pad(sent, nsent, rows, cols, sent_row, &content_rows);
+  if(pad == NULL){
+    free(sent_row);
+    free_sentences(sent, nsent);
+    cleanup();
+    return 1;
   }
-  content_rows = nsent > 0 ? sent_row[nsent] : 0;
 
   if(nsent > 0)
     goto_line(pad, sent_row, content_rows, rows, cols, &top, -1, cur);
@@ -151,8 +138,17 @@ int run_ui(char *text){
       clearok(curscr, TRUE);
       touchwin(stdscr);
       refresh();
+      if(nsent > 0 && (cols != getmaxx(pad) || getmaxy(pad) < rows + 1)){
+        int off = sent_row[cur] - top;
+        WINDOW *np = build_pad(sent, nsent, rows, cols, sent_row, &content_rows);
+        if(np != NULL){
+          delwin(pad);
+          pad = np;
+          top = sent_row[cur] - off;
+        }
+      }
       if(nsent > 0)
-        goto_line(pad, sent_row, content_rows, rows, cols, &top, cur, cur);
+        goto_line(pad, sent_row, content_rows, rows, cols, &top, -1, cur);
       else
         prefresh(pad, 0, 0, 0, 0, rows - 1, cols - 1);
       continue;
@@ -242,6 +238,30 @@ int run_ui(char *text){
   free_sentences(sent, nsent);
   cleanup();
   return 0;
+}
+
+static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
+                         int *sent_row, int *content_rows){
+  int total = 0;
+  for(int i = 0; i < nsent; i++) total += (int)strlen(sent[i]);
+  int pad_height = total / cols + 2 * nsent + 4;
+  if(pad_height < rows + 1) pad_height = rows + 1;
+
+  WINDOW *pad = newpad(pad_height, cols);
+  if(pad == NULL) return NULL;
+  wbkgd(pad, COLOR_PAIR(1));
+
+  sent_row[0] = 0;
+  int y, x;
+  for(int i = 0; i < nsent; i++){
+    waddstr(pad, sent[i]);
+    waddch(pad, '\n');
+    getyx(pad, y, x);
+    (void)x;
+    sent_row[i+1] = y;
+  }
+  *content_rows = nsent > 0 ? sent_row[nsent] : 0;
+  return pad;
 }
 
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr){
