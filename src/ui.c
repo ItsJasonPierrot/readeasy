@@ -11,6 +11,41 @@
 
 enum { STOPPED, SYNTH, PLAY };
 
+static volatile sig_atomic_t curses_active = 0;
+static pid_t synth_pid = 0;
+static pid_t play_pid = 0;
+static char audio_dir[] = "/tmp/readeasy.XXXXXX";
+static char audio_a[64];
+static char audio_b[64];
+static int audio_ok = 0;
+
+static void cleanup(void){
+  if(curses_active){
+    endwin();
+    curses_active = 0;
+  }
+  if(play_pid > 0){
+    kill(play_pid, SIGTERM);
+    play_pid = 0;
+  }
+  if(synth_pid > 0){
+    kill(synth_pid, SIGTERM);
+    synth_pid = 0;
+  }
+  if(audio_ok){
+    unlink(audio_a);
+    unlink(audio_b);
+    rmdir(audio_dir);
+    audio_ok = 0;
+  }
+}
+
+static void on_signal(int sig){
+  cleanup();
+  signal(sig, SIG_DFL);
+  raise(sig);
+}
+
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr);
 static void goto_line(WINDOW *pad, const int *row, int content_rows,
                       int rows, int cols, int *top, int old, int cur);
@@ -29,18 +64,19 @@ int run_ui(char *text){
   WINDOW *pad;
 
   int astate = STOPPED;
-  pid_t synth_pid = 0, play_pid = 0;
   int synth_i = -1;
   int ready = -1;
-  char patha[64], pathb[64];
-  char *pcur = patha, *pnext = pathb, *pswap;
-  char tmpl[] = "/tmp/readeasy.XXXXXX";
-  char *tmpdir;
-  int audio_ok;
+  char *pcur = audio_a, *pnext = audio_b, *pswap;
 
   sent = build_sentences(text, &nsent);
 
   initscr();
+  curses_active = 1;
+  signal(SIGINT,  on_signal);
+  signal(SIGTERM, on_signal);
+  signal(SIGHUP,  on_signal);
+  signal(SIGQUIT, on_signal);
+  atexit(cleanup);
   setlocale(LC_ALL, "");
   start_color();
   if (can_change_color()) {
@@ -63,11 +99,10 @@ int run_ui(char *text){
   clear();
   refresh();
 
-  tmpdir = mkdtemp(tmpl);
-  audio_ok = (tmpdir != NULL) && (sent != NULL);
+  audio_ok = (mkdtemp(audio_dir) != NULL) && (sent != NULL);
   if(audio_ok){
-    snprintf(patha, sizeof patha, "%s/a.aiff", tmpdir);
-    snprintf(pathb, sizeof pathb, "%s/b.aiff", tmpdir);
+    snprintf(audio_a, sizeof audio_a, "%s/a.aiff", audio_dir);
+    snprintf(audio_b, sizeof audio_b, "%s/b.aiff", audio_dir);
   }
 
   {
@@ -82,8 +117,9 @@ int run_ui(char *text){
 
   sent_row = malloc((size_t)(nsent + 1) * sizeof(int));
   if(sent_row == NULL){
-    endwin();
+    delwin(pad);
     free_sentences(sent, nsent);
+    cleanup();
     return 1;
   }
   sent_row[0] = 0;
@@ -202,14 +238,9 @@ int run_ui(char *text){
   }
 
   delwin(pad);
-  endwin();
   free(sent_row);
   free_sentences(sent, nsent);
-  if(audio_ok){
-    unlink(patha);
-    unlink(pathb);
-    rmdir(tmpdir);
-  }
+  cleanup();
   return 0;
 }
 
