@@ -111,8 +111,10 @@ Check that:
   moves between sentences without a long gap.
 - Pausing with `Space` leaves the cursor on the current sentence; pressing
   `Space` again resumes from that sentence (unless the cursor was moved).
-- `q` quits cleanly and returns you to the shell (no leftover `readeasy.*`
-  directories in your temp folder).
+- Resizing the terminal re-flows the text to the new width.
+- `q` quits cleanly, and `Ctrl-C` while playing also exits cleanly —
+  either way the terminal is restored and no `readeasy.*` directories are
+  left in your temp folder.
 - Each error case prints the expected message.
 
 ---

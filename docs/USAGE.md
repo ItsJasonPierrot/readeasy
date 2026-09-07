@@ -79,11 +79,18 @@ While a sentence is playing, `readeasy` synthesizes the next one in the
 background so playback moves from one sentence to the next without a
 noticeable gap.
 
-### Recovering the display
+### Resizing and recovering the display
 
-Some terminals leave the screen stale after you switch away to another tab
-or window and back. Press `Ctrl-L` to force a full redraw. `readeasy` also
-redraws automatically when the terminal is resized.
+Resize the terminal and `readeasy` re-flows the text to the new width
+automatically, keeping the current sentence in view. Some terminals also
+leave the screen stale after you switch away to another tab or window and
+back — press `Ctrl-L` to force a full redraw.
+
+### Quitting
+
+Press `q` for a normal quit. Interrupting with `Ctrl-C` (or the program
+receiving `SIGTERM`/`SIGHUP`) also exits cleanly: it stops any speech,
+restores your terminal, and removes its temporary files.
 
 ---
 
