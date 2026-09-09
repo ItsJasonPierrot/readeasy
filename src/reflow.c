@@ -138,3 +138,62 @@ void free_sentences(char **sent, int n){
   for(int i = 0; i < n; i++) free(sent[i]);
   free(sent);
 }
+
+char *wrap_sentence(const char *s, int cols){
+  if(cols < 1) cols = 1;
+
+  char *out = NULL;
+  size_t cap = 0, len = 0;
+  int col = 0;
+  const char *p = s;
+
+  while(*p){
+    while(*p == ' ') p++;
+    if(!*p) break;
+
+    const char *w = p;
+    int wlen = 0;
+    while(*p && *p != ' '){
+      p++;
+      while(((unsigned char)*p & 0xC0) == 0x80) p++;
+      wlen++;
+    }
+    size_t wbytes = (size_t)(p - w);
+
+    if(col > 0){
+      char sep;
+      if(col + 1 + wlen <= cols){ sep = ' '; col += 1; }
+      else                      { sep = '\n'; col = 0; }
+      if(ensure(&out, &cap, len + 1) < 0){ free(out); return NULL; }
+      out[len++] = sep;
+    }
+
+    if(wlen <= cols){
+      if(ensure(&out, &cap, len + wbytes) < 0){ free(out); return NULL; }
+      memcpy(out + len, w, wbytes);
+      len += wbytes;
+      col += wlen;
+    } else {
+      const char *cp = w, *end = w + wbytes;
+      while(cp < end){
+        const char *st = cp;
+        cp++;
+        while(cp < end && ((unsigned char)*cp & 0xC0) == 0x80) cp++;
+        if(col >= cols){
+          if(ensure(&out, &cap, len + 1) < 0){ free(out); return NULL; }
+          out[len++] = '\n';
+          col = 0;
+        }
+        size_t cb = (size_t)(cp - st);
+        if(ensure(&out, &cap, len + cb) < 0){ free(out); return NULL; }
+        memcpy(out + len, st, cb);
+        len += cb;
+        col += 1;
+      }
+    }
+  }
+
+  if(ensure(&out, &cap, len + 1) < 0){ free(out); return NULL; }
+  out[len] = '\0';
+  return out;
+}

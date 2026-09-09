@@ -151,7 +151,7 @@ If `readeasy` is installed globally (`make install`), drop the `./` and run
 | --- | --- | --- |
 | Maximum text size | Available memory | The whole file is loaded; the buffer grows as needed, so there is no fixed size limit. |
 | Formatting | Plain text only | Markdown, HTML, and PDF symbols are read literally. |
-| Re-flow | Fills window width | Hard-wrapped lines are joined and re-wrapped to the terminal; short lines (e.g. headings) are kept separate. |
+| Re-flow | Fills window width | Hard-wrapped lines are joined and re-wrapped to the terminal at word boundaries (words are not split); short lines (e.g. headings) are kept separate. |
 | Sentence splitting | On `.` `!` `?` | Boundaries are detected heuristically, so unusual punctuation may split a little early or late. |
 | Control characters | Converted to spaces | Stray control bytes (e.g. form-feed page breaks from PDF-to-text extraction) are replaced with spaces so they don't render as garbled symbols. |
 | Unicode display | Requires `ncursesw` | Multi-byte UTF-8 characters (accented letters, etc.) only render correctly if `readeasy` was built against wide-character ncurses. See [CONTRIBUTING.md](CONTRIBUTING.md). |

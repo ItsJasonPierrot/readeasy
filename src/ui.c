@@ -265,7 +265,8 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
                          int *sent_row, int *content_rows){
   int total = 0;
   for(int i = 0; i < nsent; i++) total += (int)strlen(sent[i]);
-  int pad_height = total / cols + 2 * nsent + 4;
+  int eff = cols > 8 ? cols - 8 : 1;
+  int pad_height = total / eff + 3 * nsent + 8;
   if(pad_height < rows + 1) pad_height = rows + 1;
 
   WINDOW *pad = newpad(pad_height, cols);
@@ -275,7 +276,13 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
   sent_row[0] = 0;
   int y, x;
   for(int i = 0; i < nsent; i++){
-    waddstr(pad, sent[i]);
+    char *wrapped = wrap_sentence(sent[i], cols);
+    if(wrapped){
+      waddstr(pad, wrapped);
+      free(wrapped);
+    } else {
+      waddstr(pad, sent[i]);
+    }
     waddch(pad, '\n');
     getyx(pad, y, x);
     (void)x;

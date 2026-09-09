@@ -174,9 +174,10 @@ A full reference — including every error message and limit — is in
 - Stray control characters (such as the page-break form feeds left behind by
   PDF-to-text extraction) are converted to spaces so they don't show up as
   garbled symbols on screen.
-- Text is re-flowed to your window width, so files that were hard-wrapped at a
-  narrow column (common in text exported from PDFs) still fill the screen, and
-  it re-flows again when you resize the terminal. Short lines such as headings
+- Text is re-flowed to your window width, wrapping at word boundaries (words
+  are never split across lines), so files that were hard-wrapped at a narrow
+  column (common in text exported from PDFs) still fill the screen, and it
+  re-flows again when you resize the terminal. Short lines such as headings
   are kept on their own; sentence boundaries are detected from `.`, `!`, `?`.
 
 ---

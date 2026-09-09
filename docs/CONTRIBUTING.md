@@ -114,7 +114,8 @@ echo "hello world" | ./readeasy      # piped input
 Check that:
 
 - The text fills the window width, including accented/non-ASCII characters —
-  no garbled symbols, no narrow column left over from a hard-wrapped file.
+  no garbled symbols, no narrow column left over from a hard-wrapped file, and
+  no word split across two lines.
 - A very large file (well over 64 KB) loads completely — the end of the text
   is reachable, not truncated.
 - Piped input (`… | ./readeasy`) is still controllable — `Space`/`q` work,
