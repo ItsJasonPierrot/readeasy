@@ -53,6 +53,9 @@ While a file is open, these keys work:
 | --- | --- |
 | `↑` | Move the cursor up one sentence. |
 | `↓` | Move the cursor down one sentence. |
+| `PgUp` / `PgDn` | Move the cursor up or down about one screenful. |
+| `Home` / `g` | Jump to the first sentence. |
+| `End` / `G` | Jump to the last sentence. |
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
 | `+` | Speak faster (increase words per minute). |
 | `-` | Speak slower (decrease words per minute). |
@@ -65,7 +68,8 @@ While a file is open, these keys work:
 highlighted — this is the **cursor**. It marks where reading will begin and
 shows which sentence you are on.
 
-- Move the cursor with `↑` / `↓`.
+- Move the cursor with `↑` / `↓`, jump about a screenful with `PgUp` /
+  `PgDn`, or go to the very start or end with `Home` / `End` (or `g` / `G`).
 - Press `Space` to start reading from the cursor sentence. As each sentence
   finishes, the highlight advances to the next one, so the cursor always
   shows the sentence currently being read.

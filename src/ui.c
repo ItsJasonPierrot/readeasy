@@ -53,6 +53,7 @@ static void on_signal(int sig){
 
 static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
                          int *sent_row, int *content_rows);
+static int page_to(const int *sent_row, int nsent, int cur, int delta);
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr);
 static void goto_line(WINDOW *pad, const int *row, int content_rows,
                       int rows, int cols, int *top, int old, int cur);
@@ -103,6 +104,12 @@ int run_ui(char *text, const char *name){
   define_key("\033[B", KEY_DOWN);
   define_key("\033OA", KEY_UP);
   define_key("\033OB", KEY_DOWN);
+  define_key("\033[5~", KEY_PPAGE);
+  define_key("\033[6~", KEY_NPAGE);
+  define_key("\033[H",  KEY_HOME);
+  define_key("\033[F",  KEY_END);
+  define_key("\033[1~", KEY_HOME);
+  define_key("\033[4~", KEY_END);
 
   getmaxyx(stdscr, rows, cols);
   has_status = rows > 1;
@@ -179,14 +186,25 @@ int run_ui(char *text, const char *name){
       continue;
     }
 
-    if((character == KEY_DOWN || character == KEY_UP) && nsent > 0){
+    if(nsent > 0 && (character == KEY_DOWN  || character == KEY_UP    ||
+                     character == KEY_NPAGE || character == KEY_PPAGE ||
+                     character == KEY_HOME  || character == KEY_END   ||
+                     character == 'g'       || character == 'G')){
       if(astate != STOPPED){
         stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
         astate = STOPPED;
       }
       int old = cur;
-      if(character == KEY_DOWN && cur < nsent - 1) cur++;
-      if(character == KEY_UP   && cur > 0)         cur--;
+      switch(character){
+        case KEY_DOWN:  if(cur < nsent - 1) cur++;                       break;
+        case KEY_UP:    if(cur > 0) cur--;                               break;
+        case KEY_NPAGE: cur = page_to(sent_row, nsent, cur, view_rows);  break;
+        case KEY_PPAGE: cur = page_to(sent_row, nsent, cur, -view_rows); break;
+        case KEY_HOME:
+        case 'g':       cur = 0;                                         break;
+        case KEY_END:
+        case 'G':       cur = nsent - 1;                                 break;
+      }
       goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
     }
 
@@ -305,6 +323,21 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
   }
   *content_rows = nsent > 0 ? sent_row[nsent] : 0;
   return pad;
+}
+
+static int page_to(const int *sent_row, int nsent, int cur, int delta){
+  int target = sent_row[cur] + delta;
+  if(target < 0) target = 0;
+
+  int best = 0;
+  for(int i = 0; i < nsent; i++){
+    if(sent_row[i] <= target) best = i;
+    else break;
+  }
+
+  if(delta > 0 && best <= cur) best = (cur < nsent - 1) ? cur + 1 : cur;
+  if(delta < 0 && best >= cur) best = (cur > 0)         ? cur - 1 : cur;
+  return best;
 }
 
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr){

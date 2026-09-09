@@ -120,8 +120,9 @@ Check that:
   is reachable, not truncated.
 - Piped input (`… | ./readeasy`) is still controllable — `Space`/`q` work,
   because the controls fall back to `/dev/tty`.
-- `↑` / `↓` move the highlighted cursor sentence, and `Space` starts reading
-  from the cursor sentence, not always from the beginning.
+- `↑` / `↓` move the highlighted cursor sentence; `PgUp` / `PgDn` move about a
+  screenful; `Home`/`End` (or `g`/`G`) jump to the first/last sentence. `Space`
+  starts reading from the cursor sentence, not always from the beginning.
 - While reading, the highlight advances sentence by sentence and the audio
   moves between sentences without a long gap.
 - Pausing with `Space` leaves the cursor on the current sentence; pressing

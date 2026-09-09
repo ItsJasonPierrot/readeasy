@@ -146,6 +146,8 @@ Once the file is open, use these keys:
 | Key | What it does |
 | --- | --- |
 | `↑` / `↓` | Move the highlighted cursor up or down one sentence. |
+| `PgUp` / `PgDn` | Move up or down about one screenful. |
+| `Home` / `End` (or `g` / `G`) | Jump to the first or last sentence. |
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
 | `+` / `-` | Speak faster or slower (words per minute). Takes effect as reading continues. |
 | `Ctrl-L` | Redraw the screen (useful if it looks stale after switching terminal tabs). |
