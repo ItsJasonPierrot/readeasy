@@ -53,9 +53,11 @@ static void goto_line(WINDOW *pad, const int *row, int content_rows,
                       int rows, int cols, int *top, int old, int cur);
 static void stop_audio(pid_t *synth_pid, pid_t *play_pid,
                        int *synth_i, int *ready);
+static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
+                        int playing, int cols);
 
-int run_ui(char *text){
-  int rows, cols;
+int run_ui(char *text, const char *name){
+  int rows, cols, view_rows, has_status;
   int content_rows;
   int top = 0;
   int cur = 0;
@@ -63,7 +65,7 @@ int run_ui(char *text){
   int character;
   int *sent_row = NULL;
   char **sent;
-  WINDOW *pad;
+  WINDOW *pad, *sbar = NULL;
 
   int astate = STOPPED;
   int synth_i = -1;
@@ -89,6 +91,7 @@ int run_ui(char *text){
   noecho();
   cbreak();
   keypad(stdscr, TRUE);
+  curs_set(0);
 
   define_key("\033[A", KEY_UP);
   define_key("\033[B", KEY_DOWN);
@@ -96,6 +99,8 @@ int run_ui(char *text){
   define_key("\033OB", KEY_DOWN);
 
   getmaxyx(stdscr, rows, cols);
+  has_status = rows > 1;
+  view_rows = has_status ? rows - 1 : rows;
 
   wbkgd(stdscr, COLOR_PAIR(1));
   clear();
@@ -122,10 +127,16 @@ int run_ui(char *text){
     return 1;
   }
 
+  if(has_status){
+    sbar = newwin(1, cols, rows - 1, 0);
+    if(sbar) wbkgd(sbar, COLOR_PAIR(1) | A_REVERSE);
+  }
+
   if(nsent > 0)
-    goto_line(pad, sent_row, content_rows, rows, cols, &top, -1, cur);
+    goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
   else
-    prefresh(pad, 0, 0, 0, 0, rows - 1, cols - 1);
+    prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
+  if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, cols);
 
   while(1){
     timeout(astate == STOPPED ? -1 : 100);
@@ -133,6 +144,13 @@ int run_ui(char *text){
 
     if(character == KEY_RESIZE || character == 12){
       getmaxyx(stdscr, rows, cols);
+      has_status = rows > 1;
+      view_rows = has_status ? rows - 1 : rows;
+      if(sbar){ delwin(sbar); sbar = NULL; }
+      if(has_status){
+        sbar = newwin(1, cols, rows - 1, 0);
+        if(sbar) wbkgd(sbar, COLOR_PAIR(1) | A_REVERSE);
+      }
       flushinp();
       wbkgd(stdscr, COLOR_PAIR(1));
       clearok(curscr, TRUE);
@@ -148,9 +166,10 @@ int run_ui(char *text){
         }
       }
       if(nsent > 0)
-        goto_line(pad, sent_row, content_rows, rows, cols, &top, -1, cur);
+        goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
       else
-        prefresh(pad, 0, 0, 0, 0, rows - 1, cols - 1);
+        prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
+      if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, cols);
       continue;
     }
 
@@ -162,7 +181,7 @@ int run_ui(char *text){
       int old = cur;
       if(character == KEY_DOWN && cur < nsent - 1) cur++;
       if(character == KEY_UP   && cur > 0)         cur--;
-      goto_line(pad, sent_row, content_rows, rows, cols, &top, old, cur);
+      goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
     }
 
     if(character == ' ' && nsent > 0 && audio_ok){
@@ -207,7 +226,7 @@ int run_ui(char *text){
         } else {
           int old = cur;
           cur++;
-          goto_line(pad, sent_row, content_rows, rows, cols, &top, old, cur);
+          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
           pswap = pcur; pcur = pnext; pnext = pswap;
           if(ready == cur){
             ready = -1;
@@ -231,9 +250,11 @@ int run_ui(char *text){
         }
       }
     }
+    if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, cols);
   }
 
   delwin(pad);
+  if(sbar) delwin(sbar);
   free(sent_row);
   free_sentences(sent, nsent);
   cleanup();
@@ -285,6 +306,26 @@ static void goto_line(WINDOW *pad, const int *row, int content_rows,
   }
 
   prefresh(pad, *top, 0, 0, 0, rows - 1, cols - 1);
+}
+
+static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
+                        int playing, int cols){
+  werase(sbar);
+  wmove(sbar, 0, 1);
+  if(nsent > 0){
+    int pct = ((cur + 1) * 100) / nsent;
+    wprintw(sbar, "%s   %d/%d  %d%%   %s",
+            name, cur + 1, nsent, pct, playing ? "playing" : "paused");
+  } else {
+    wprintw(sbar, "%s   (no readable text)", name);
+  }
+
+  const char *hint = "Space play/pause   Up/Dn move   q quit ";
+  int hlen = (int)strlen(hint);
+  if(cols - hlen > getcurx(sbar) + 2)
+    mvwprintw(sbar, 0, cols - hlen, "%s", hint);
+
+  wrefresh(sbar);
 }
 
 static void stop_audio(pid_t *synth_pid, pid_t *play_pid,

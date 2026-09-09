@@ -75,6 +75,14 @@ shows which sentence you are on.
   playback.)
 - Reading stops on its own at the end of the text.
 
+### The status bar
+
+The bottom line of the screen is a status bar. On the left it shows the file
+name (or `(stdin)` for piped input), your position as `sentence/total`, the
+percent through the text, and whether it is `playing` or `paused`. On the
+right, when the window is wide enough, it lists the main keys. It updates as
+you move the cursor and as playback advances.
+
 While a sentence is playing, `readeasy` synthesizes the next one in the
 background so playback moves from one sentence to the next without a
 noticeable gap.

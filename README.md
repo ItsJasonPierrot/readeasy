@@ -120,6 +120,10 @@ where reading starts and, while speech plays, it advances sentence by sentence
 so you can see what is being read. If you pause and then press `Space` again
 without moving the cursor, reading picks up from the same sentence.
 
+A status bar along the bottom shows the file name, your position (sentence
+number, total, and percent), whether it is playing or paused, and a reminder
+of the keys.
+
 A full reference — including every error message and limit — is in
 [docs/USAGE.md](docs/USAGE.md).
 

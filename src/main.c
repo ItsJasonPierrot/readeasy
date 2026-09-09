@@ -42,7 +42,9 @@ int main(int argc, char *argv[]){
     }
   }
 
-  if(run_ui(buffer) != 0){
+  const char *name = (argc == 2) ? argv[1] : "(stdin)";
+
+  if(run_ui(buffer, name) != 0){
     free(buffer);
     return 1;
   }
