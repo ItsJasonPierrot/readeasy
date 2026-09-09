@@ -107,7 +107,7 @@ Remove it later with `sudo make uninstall` (or the matching `PREFIX`).
 Run the program with the name of the file you want to read:
 
 ```bash
-./readeasy <filename>
+./readeasy [options] <filename>
 ```
 
 For example:
@@ -138,6 +138,22 @@ pbpaste | readeasy                    # whatever you've copied (macOS clipboard)
 
 `pdftotext` comes from [poppler](https://poppler.freedesktop.org)
 (`brew install poppler`). `col` and `pbpaste` are built into macOS.
+
+### Options
+
+| Option | What it does |
+| --- | --- |
+| `-r`, `--rate N` | Starting speed in words per minute (80–400, default 180). You can also change it live with `+` / `-`. |
+| `--voice NAME` | Voice to use, passed to `say -v` (list voices with `say -v '?'`). |
+| `--no-color` | Skip the color theme and use your terminal's default colors. |
+| `-v`, `--version` | Print the version and exit. |
+| `-h`, `--help` | Print a usage summary and exit. |
+
+For example, read a PDF slowly in a chosen voice:
+
+```bash
+pdftotext paper.pdf - | readeasy --rate 140 --voice Daniel
+```
 
 ### Controls
 

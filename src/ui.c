@@ -17,6 +17,7 @@ enum { STOPPED, SYNTH, PLAY };
 #define RATE_STEP 20
 
 static volatile sig_atomic_t curses_active = 0;
+static short color_pair = 1;
 static pid_t synth_pid = 0;
 static pid_t play_pid = 0;
 static char audio_dir[] = "/tmp/readeasy.XXXXXX";
@@ -62,7 +63,7 @@ static void stop_audio(pid_t *synth_pid, pid_t *play_pid,
 static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
                         int playing, int rate, int cols);
 
-int run_ui(char *text, const char *name){
+int run_ui(char *text, const char *name, const ui_opts *opts){
   int rows, cols, view_rows, has_status;
   int content_rows;
   int top = 0;
@@ -76,8 +77,13 @@ int run_ui(char *text, const char *name){
   int astate = STOPPED;
   int synth_i = -1;
   int ready = -1;
-  int rate = RATE_DEFAULT;
+  int rate = opts->rate;
+  const char *voice = opts->voice;
   char *pcur = audio_a, *pnext = audio_b, *pswap;
+
+  if(rate < RATE_MIN) rate = RATE_MIN;
+  if(rate > RATE_MAX) rate = RATE_MAX;
+  color_pair = opts->color ? 1 : 0;
 
   sent = build_sentences(text, &nsent);
 
@@ -90,11 +96,13 @@ int run_ui(char *text, const char *name){
   atexit(cleanup);
   setlocale(LC_ALL, "");
   start_color();
-  if (can_change_color()) {
-    init_color(COLOR_BLUE,   60, 100, 250);
-    init_color(COLOR_YELLOW, 1000, 780, 560);
+  if(opts->color){
+    if (can_change_color()) {
+      init_color(COLOR_BLUE,   60, 100, 250);
+      init_color(COLOR_YELLOW, 1000, 780, 560);
+    }
+    init_pair(1, COLOR_YELLOW, COLOR_BLUE);
   }
-  init_pair(1, COLOR_YELLOW, COLOR_BLUE);
   noecho();
   cbreak();
   keypad(stdscr, TRUE);
@@ -115,7 +123,7 @@ int run_ui(char *text, const char *name){
   has_status = rows > 1;
   view_rows = has_status ? rows - 1 : rows;
 
-  wbkgd(stdscr, COLOR_PAIR(1));
+  wbkgd(stdscr, COLOR_PAIR(color_pair));
   clear();
   refresh();
 
@@ -142,7 +150,7 @@ int run_ui(char *text, const char *name){
 
   if(has_status){
     sbar = newwin(1, cols, rows - 1, 0);
-    if(sbar) wbkgd(sbar, COLOR_PAIR(1) | A_REVERSE);
+    if(sbar) wbkgd(sbar, COLOR_PAIR(color_pair) | A_REVERSE);
   }
 
   if(nsent > 0)
@@ -162,10 +170,10 @@ int run_ui(char *text, const char *name){
       if(sbar){ delwin(sbar); sbar = NULL; }
       if(has_status){
         sbar = newwin(1, cols, rows - 1, 0);
-        if(sbar) wbkgd(sbar, COLOR_PAIR(1) | A_REVERSE);
+        if(sbar) wbkgd(sbar, COLOR_PAIR(color_pair) | A_REVERSE);
       }
       flushinp();
-      wbkgd(stdscr, COLOR_PAIR(1));
+      wbkgd(stdscr, COLOR_PAIR(color_pair));
       clearok(curscr, TRUE);
       touchwin(stdscr);
       refresh();
@@ -210,7 +218,7 @@ int run_ui(char *text, const char *name){
 
     if(character == ' ' && nsent > 0 && audio_ok){
       if(astate == STOPPED){
-        if(synth_to_file(sent[cur], pcur, rate, &synth_pid) == 0){
+        if(synth_to_file(sent[cur], pcur, rate, voice, &synth_pid) == 0){
           synth_i = cur;
           astate = SYNTH;
         }
@@ -240,7 +248,7 @@ int run_ui(char *text, const char *name){
         if(play_file(pcur, &play_pid) == 0){
           astate = PLAY;
           if(cur + 1 < nsent &&
-             synth_to_file(sent[cur+1], pnext, rate, &synth_pid) == 0){
+             synth_to_file(sent[cur+1], pnext, rate, voice, &synth_pid) == 0){
             synth_i = cur + 1;
             ready = -1;
           }
@@ -266,7 +274,7 @@ int run_ui(char *text, const char *name){
             if(play_file(pcur, &play_pid) == 0){
               astate = PLAY;
               if(cur + 1 < nsent &&
-                 synth_to_file(sent[cur+1], pnext, rate, &synth_pid) == 0){
+                 synth_to_file(sent[cur+1], pnext, rate, voice, &synth_pid) == 0){
                 synth_i = cur + 1;
               }
             } else {
@@ -274,7 +282,7 @@ int run_ui(char *text, const char *name){
             }
           } else if(synth_i == cur){
             astate = SYNTH;
-          } else if(synth_to_file(sent[cur], pcur, rate, &synth_pid) == 0){
+          } else if(synth_to_file(sent[cur], pcur, rate, voice, &synth_pid) == 0){
             synth_i = cur;
             astate = SYNTH;
           } else {
@@ -304,7 +312,7 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
 
   WINDOW *pad = newpad(pad_height, cols);
   if(pad == NULL) return NULL;
-  wbkgd(pad, COLOR_PAIR(1));
+  wbkgd(pad, COLOR_PAIR(color_pair));
 
   sent_row[0] = 0;
   int y, x;
@@ -342,7 +350,7 @@ static int page_to(const int *sent_row, int nsent, int cur, int delta){
 
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr){
   for(int r = row[i]; r < row[i+1]; r++)
-    mvwchgat(pad, r, 0, -1, attr, 1, NULL);
+    mvwchgat(pad, r, 0, -1, attr, color_pair, NULL);
 }
 
 static void goto_line(WINDOW *pad, const int *row, int content_rows,

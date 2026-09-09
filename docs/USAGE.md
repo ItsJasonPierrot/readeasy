@@ -14,8 +14,8 @@ This is the full reference for `readeasy`. For a quick start, see the
 ## Synopsis
 
 ```
-readeasy <filename>
-command | readeasy
+readeasy [options] <filename>
+command | readeasy [options]
 ```
 
 ---
@@ -40,8 +40,24 @@ the speech with the keyboard, one sentence at a time.
 | --- | --- | --- |
 | `<filename>` | Optional | Path to the text file to read. If omitted, `readeasy` reads from piped input instead. |
 
-`readeasy` accepts **at most one** filename. Passing two or more arguments is an
+`readeasy` accepts **at most one** filename. Passing two or more filenames is an
 error.
+
+---
+
+## Options
+
+| Option | Description |
+| --- | --- |
+| `-r`, `--rate N` | Starting speaking speed in words per minute (clamped to 80–400; default 180). Can also be changed live with `+` / `-`. |
+| `--voice NAME` | Text-to-speech voice, passed to `say -v NAME`. List the available voices with `say -v '?'`. |
+| `--no-color` | Do not apply the color theme; use the terminal's default colors (the current sentence and status bar are shown in reverse video). |
+| `-v`, `--version` | Print the version and exit. |
+| `-h`, `--help` | Print a usage summary and exit. |
+
+Options may appear before or after the filename. An unknown option, or a
+missing value for `--rate`/`--voice`, prints the usage summary and exits with
+status `1`.
 
 ---
 
@@ -187,7 +203,7 @@ All errors print to standard error and exit with status `1`.
 
 | Message | Cause | How to fix |
 | --- | --- | --- |
-| `Usage: readeasy <filename>` | More than one argument was given. | Pass at most one filename. |
+| `Usage: readeasy [options] [file]` … | More than one filename, an unknown option, or a missing option value. | Pass at most one filename and check the options (`readeasy --help`). |
 | `No input provided.` | No filename and no piped input. | Give a filename or pipe text in. |
 | `File not found.` | The filename could not be opened. | Check the path and spelling. |
 | `Error reading file.` | The file could not be read after opening. | Check file permissions and that it is readable. |
