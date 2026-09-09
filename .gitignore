@@ -5,6 +5,7 @@ obj/
 out/
 
 # Compiled executables
+/readeasy
 *.exe
 *.out
 *.app

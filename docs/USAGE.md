@@ -133,6 +133,16 @@ Read a man page's plain text:
 man ls | col -b | ./readeasy
 ```
 
+Read a PDF (via poppler's `pdftotext`) or the macOS clipboard:
+
+```bash
+pdftotext paper.pdf - | ./readeasy
+pbpaste | ./readeasy
+```
+
+If `readeasy` is installed globally (`make install`), drop the `./` and run
+`readeasy` from anywhere.
+
 ---
 
 ## Limits

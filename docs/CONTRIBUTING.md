@@ -78,6 +78,16 @@ Homebrew's keg-only install path on macOS too) and uses it to link against
 the wide-character library; if it can't find that tool it falls back to
 plain `-lncursesw`.
 
+The compiled `readeasy` binary is **not** committed to the repository (it is
+in `.gitignore`) — always build it from source with `make`.
+
+To install it on your `PATH` (`/usr/local/bin` by default), or remove it:
+
+```bash
+sudo make install                    # or: make install PREFIX="$HOME/.local"
+sudo make uninstall
+```
+
 To remove the executable and the compiled object files:
 
 ```bash

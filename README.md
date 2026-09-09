@@ -76,7 +76,26 @@ cd readeasy
 make
 ```
 
-This creates a program called `readeasy` in the current folder.
+This creates a program called `readeasy` in the current folder. Run it from
+there with `./readeasy`, or install it globally (next step).
+
+**4. (Optional) Install it globally**
+
+To run `readeasy` from anywhere instead of `./readeasy` inside this folder:
+
+```bash
+sudo make install
+```
+
+This copies the program to `/usr/local/bin`. If that directory needs `sudo`
+on your system, the command above handles it; to install somewhere on your
+own `PATH` without `sudo`, set a prefix, e.g.:
+
+```bash
+make install PREFIX="$HOME/.local"
+```
+
+Remove it later with `sudo make uninstall` (or the matching `PREFIX`).
 
 > **Note:** The old `gcc -o readeasy readeasy.c` command no longer works. The
 > code is now split across several files, so always build with `make`.
@@ -102,6 +121,23 @@ You can also **pipe** text into it instead of giving a filename:
 ```bash
 cat notes.txt | ./readeasy
 ```
+
+> If you installed it globally (step 4 above), drop the `./` and just run
+> `readeasy <filename>` from any folder.
+
+### Reading man pages, PDFs, and the clipboard
+
+`readeasy` reads plain text, so anything you can turn into text on the command
+line can be piped in:
+
+```bash
+man ls | col -b | readeasy            # a man page (col -b strips formatting)
+pdftotext paper.pdf - | readeasy      # a PDF (needs poppler's pdftotext)
+pbpaste | readeasy                    # whatever you've copied (macOS clipboard)
+```
+
+`pdftotext` comes from [poppler](https://poppler.freedesktop.org)
+(`brew install poppler`). `col` and `pbpaste` are built into macOS.
 
 ### Controls
 

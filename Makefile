@@ -1,6 +1,9 @@
 CC = cc
 CFLAGS = -Wall -Wextra -Iinclude
 
+PREFIX ?= /usr/local
+BINDIR = $(PREFIX)/bin
+
 NCURSESW_CONFIG := $(firstword $(wildcard /opt/homebrew/opt/ncurses/bin/ncursesw6-config) \
                                 $(wildcard /usr/local/opt/ncurses/bin/ncursesw6-config) \
                                 $(shell command -v ncursesw6-config 2>/dev/null))
@@ -20,5 +23,14 @@ readeasy: $(OBJ)
 src/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+install: readeasy
+	mkdir -p $(DESTDIR)$(BINDIR)
+	install -m 755 readeasy $(DESTDIR)$(BINDIR)/readeasy
+
+uninstall:
+	rm -f $(DESTDIR)$(BINDIR)/readeasy
+
 clean:
 	rm -f $(OBJ) readeasy
+
+.PHONY: install uninstall clean
