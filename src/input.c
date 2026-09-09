@@ -1,26 +1,46 @@
 #include <unistd.h>
+#include <stdlib.h>
 #include "input.h"
 
-int process_buffer(int input_text, char *buffer){
+int process_buffer(int input_text, char **out){
+  size_t cap = BUFFER_SIZE;
+  size_t total = 0;
+  ssize_t n;
+  char *buffer = malloc(cap);
 
-  int total = 0;
-  ssize_t text;
-
-  while((text = read(input_text,buffer + total, BUFFER_SIZE - total - 3)) > 0){
-    total += text;
+  *out = NULL;
+  if(buffer == NULL){
+    write(STDERR_FILENO,"Allocation failed.\n",19);
+    return 1;
   }
 
-  if(text<0){
+  while((n = read(input_text, buffer + total, cap - total - 3)) > 0){
+    total += (size_t)n;
+    if(total + 3 >= cap){
+      char *grown = realloc(buffer, cap * 2);
+      if(grown == NULL){
+        write(STDERR_FILENO,"Allocation failed.\n",19);
+        free(buffer);
+        return 1;
+      }
+      buffer = grown;
+      cap *= 2;
+    }
+  }
+
+  if(n < 0){
     write(STDERR_FILENO,"Error reading file.\n", 20);
+    free(buffer);
     return 1;
   }
 
-  if(total==0){
+  if(total == 0){
     write(STDERR_FILENO,"File is empty\n",14);
+    free(buffer);
     return 1;
   }
 
-  for(int i = 0; i < total; i++){
+  for(size_t i = 0; i < total; i++){
     unsigned char c = buffer[i];
     if(c < 0x20 && c != '\n' && c != '\t'){
       buffer[i] = ' ';
@@ -31,6 +51,6 @@ int process_buffer(int input_text, char *buffer){
   buffer[total+1] = '\n';
   buffer[total+2] = '\0';
 
+  *out = buffer;
   return 0;
 }
-

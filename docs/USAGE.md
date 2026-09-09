@@ -131,7 +131,7 @@ man ls | col -b | ./readeasy
 
 | Limit | Value | Notes |
 | --- | --- | --- |
-| Maximum text size | ~64 KB | About 10,000 words. Text beyond this is not loaded. |
+| Maximum text size | Available memory | The whole file is loaded; the buffer grows as needed, so there is no fixed size limit. |
 | Formatting | Plain text only | Markdown, HTML, and PDF symbols are read literally. |
 | Re-flow | Fills window width | Hard-wrapped lines are joined and re-wrapped to the terminal; short lines (e.g. headings) are kept separate. |
 | Sentence splitting | On `.` `!` `?` | Boundaries are detected heuristically, so unusual punctuation may split a little early or late. |
@@ -162,6 +162,7 @@ All errors print to standard error and exit with status `1`.
 | `Error reading file.` | The file could not be read after opening. | Check file permissions and that it is readable. |
 | `File is empty` | The file or piped input contained no text. | Use a file that has content. |
 | `Allocation failed.` | The program could not reserve memory. | Free up memory and try again. |
+| `No terminal available for controls.` | Text was piped in but there is no terminal to read key presses from. | Run `readeasy` in a terminal (piped input still needs a `/dev/tty` for the controls). |
 | `fork failed` | The system could not start the speech process. | Try again; check system limits. |
 
 ---

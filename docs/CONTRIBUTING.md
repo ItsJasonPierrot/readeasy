@@ -88,23 +88,27 @@ make clean
 
 ## Testing
 
-`readeasy` is tested by hand using the sample files in `tests/`. After making a
-change, rebuild and try a few cases:
+`readeasy` is tested by hand. After making a change, rebuild and try a few
+cases (use any plain-text file, ideally one exported from a PDF so it has
+accented characters and hard-wrapped lines):
 
 ```bash
 make
-./readeasy tests/longer_text.txt     # a normal file
-./readeasy tests/empty.txt           # should say "File is empty"
-./readeasy tests/pdf.txt             # accented characters and page breaks
+./readeasy somefile.txt              # a normal file
+printf '' > empty.txt; ./readeasy empty.txt   # should say "File is empty"
+./readeasy /no/such/file             # should say "File not found."
 echo "hello world" | ./readeasy      # piped input
-./readeasy tests/a tests/b           # two args: should show usage error
+./readeasy a b                       # two args: should show usage error
 ```
 
 Check that:
 
-- The text fills the window width, including accented/non-ASCII characters
-  (see `tests/pdf.txt`) — no garbled symbols, no narrow column left over from
-  a hard-wrapped file.
+- The text fills the window width, including accented/non-ASCII characters —
+  no garbled symbols, no narrow column left over from a hard-wrapped file.
+- A very large file (well over 64 KB) loads completely — the end of the text
+  is reachable, not truncated.
+- Piped input (`… | ./readeasy`) is still controllable — `Space`/`q` work,
+  because the controls fall back to `/dev/tty`.
 - `↑` / `↓` move the highlighted cursor sentence, and `Space` starts reading
   from the cursor sentence, not always from the beginning.
 - While reading, the highlight advances sentence by sentence and the audio

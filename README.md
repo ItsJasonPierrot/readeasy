@@ -127,8 +127,8 @@ A full reference — including every error message and limit — is in
 
 ## Limits
 
-- The program reads up to about **64 KB** of text (roughly 10,000 words). Text
-  beyond that is not loaded.
+- There is no fixed size limit — the whole file is loaded, growing the buffer
+  as needed (bounded only by available memory).
 - It reads plain text. It does not interpret Markdown, HTML, or PDF formatting —
   symbols like `#` or `*` are read aloud as written.
 - Stray control characters (such as the page-break form feeds left behind by
