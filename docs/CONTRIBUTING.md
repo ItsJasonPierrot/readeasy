@@ -126,8 +126,10 @@ Check that:
   moves between sentences without a long gap.
 - Pausing with `Space` leaves the cursor on the current sentence; pressing
   `Space` again resumes from that sentence (unless the cursor was moved).
-- The bottom status bar shows the file name, position, percent, and state,
-  and updates as the cursor moves and playback advances.
+- The bottom status bar shows the file name, position, percent, state, and
+  speed, and updates as the cursor moves and playback advances.
+- `+` / `-` change the speaking speed (shown as `wpm` in the status bar),
+  clamped between 80 and 400.
 - Resizing the terminal re-flows the text to the new width (status bar stays
   at the bottom).
 - `q` quits cleanly, and `Ctrl-C` while playing also exits cleanly —

@@ -11,6 +11,11 @@
 
 enum { STOPPED, SYNTH, PLAY };
 
+#define RATE_DEFAULT 180
+#define RATE_MIN 80
+#define RATE_MAX 400
+#define RATE_STEP 20
+
 static volatile sig_atomic_t curses_active = 0;
 static pid_t synth_pid = 0;
 static pid_t play_pid = 0;
@@ -54,7 +59,7 @@ static void goto_line(WINDOW *pad, const int *row, int content_rows,
 static void stop_audio(pid_t *synth_pid, pid_t *play_pid,
                        int *synth_i, int *ready);
 static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
-                        int playing, int cols);
+                        int playing, int rate, int cols);
 
 int run_ui(char *text, const char *name){
   int rows, cols, view_rows, has_status;
@@ -70,6 +75,7 @@ int run_ui(char *text, const char *name){
   int astate = STOPPED;
   int synth_i = -1;
   int ready = -1;
+  int rate = RATE_DEFAULT;
   char *pcur = audio_a, *pnext = audio_b, *pswap;
 
   sent = build_sentences(text, &nsent);
@@ -136,7 +142,7 @@ int run_ui(char *text, const char *name){
     goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
   else
     prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
-  if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, cols);
+  if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, cols);
 
   while(1){
     timeout(astate == STOPPED ? -1 : 100);
@@ -169,7 +175,7 @@ int run_ui(char *text, const char *name){
         goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
       else
         prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
-      if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, cols);
+      if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, cols);
       continue;
     }
 
@@ -186,7 +192,7 @@ int run_ui(char *text, const char *name){
 
     if(character == ' ' && nsent > 0 && audio_ok){
       if(astate == STOPPED){
-        if(synth_to_file(sent[cur], pcur, &synth_pid) == 0){
+        if(synth_to_file(sent[cur], pcur, rate, &synth_pid) == 0){
           synth_i = cur;
           astate = SYNTH;
         }
@@ -201,13 +207,22 @@ int run_ui(char *text, const char *name){
       break;
     }
 
+    if(character == '+' || character == '='){
+      rate += RATE_STEP;
+      if(rate > RATE_MAX) rate = RATE_MAX;
+    }
+    if(character == '-' || character == '_'){
+      rate -= RATE_STEP;
+      if(rate < RATE_MIN) rate = RATE_MIN;
+    }
+
     if(astate == SYNTH){
       if(waitpid(synth_pid, NULL, WNOHANG) > 0){
         synth_i = -1;
         if(play_file(pcur, &play_pid) == 0){
           astate = PLAY;
           if(cur + 1 < nsent &&
-             synth_to_file(sent[cur+1], pnext, &synth_pid) == 0){
+             synth_to_file(sent[cur+1], pnext, rate, &synth_pid) == 0){
             synth_i = cur + 1;
             ready = -1;
           }
@@ -233,7 +248,7 @@ int run_ui(char *text, const char *name){
             if(play_file(pcur, &play_pid) == 0){
               astate = PLAY;
               if(cur + 1 < nsent &&
-                 synth_to_file(sent[cur+1], pnext, &synth_pid) == 0){
+                 synth_to_file(sent[cur+1], pnext, rate, &synth_pid) == 0){
                 synth_i = cur + 1;
               }
             } else {
@@ -241,7 +256,7 @@ int run_ui(char *text, const char *name){
             }
           } else if(synth_i == cur){
             astate = SYNTH;
-          } else if(synth_to_file(sent[cur], pcur, &synth_pid) == 0){
+          } else if(synth_to_file(sent[cur], pcur, rate, &synth_pid) == 0){
             synth_i = cur;
             astate = SYNTH;
           } else {
@@ -250,7 +265,7 @@ int run_ui(char *text, const char *name){
         }
       }
     }
-    if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, cols);
+    if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, cols);
   }
 
   delwin(pad);
@@ -316,18 +331,18 @@ static void goto_line(WINDOW *pad, const int *row, int content_rows,
 }
 
 static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
-                        int playing, int cols){
+                        int playing, int rate, int cols){
   werase(sbar);
   wmove(sbar, 0, 1);
   if(nsent > 0){
     int pct = ((cur + 1) * 100) / nsent;
-    wprintw(sbar, "%s   %d/%d  %d%%   %s",
-            name, cur + 1, nsent, pct, playing ? "playing" : "paused");
+    wprintw(sbar, "%s   %d/%d  %d%%   %s   %d wpm",
+            name, cur + 1, nsent, pct, playing ? "playing" : "paused", rate);
   } else {
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   Up/Dn move   q quit ";
+  const char *hint = "Space play/pause   Up/Dn move   +/- speed   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);

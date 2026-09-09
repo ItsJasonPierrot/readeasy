@@ -54,6 +54,8 @@ While a file is open, these keys work:
 | `↑` | Move the cursor up one sentence. |
 | `↓` | Move the cursor down one sentence. |
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
+| `+` | Speak faster (increase words per minute). |
+| `-` | Speak slower (decrease words per minute). |
 | `Ctrl-L` | Redraw the screen (see *Recovering the display* below). |
 | `q` | Quit `readeasy`. If speech is playing, it stops first. |
 
@@ -79,9 +81,16 @@ shows which sentence you are on.
 
 The bottom line of the screen is a status bar. On the left it shows the file
 name (or `(stdin)` for piped input), your position as `sentence/total`, the
-percent through the text, and whether it is `playing` or `paused`. On the
-right, when the window is wide enough, it lists the main keys. It updates as
-you move the cursor and as playback advances.
+percent through the text, whether it is `playing` or `paused`, and the current
+speaking speed in words per minute (`wpm`). On the right, when the window is
+wide enough, it lists the main keys. It updates as you move the cursor, change
+the speed, and as playback advances.
+
+### Speaking speed
+
+`+` speeds the voice up and `-` slows it down, in steps of 20 words per minute
+(from 80 up to 400; the default is 180). A change applies to sentences read
+from then on, so it can take a sentence to fully take effect while playing.
 
 While a sentence is playing, `readeasy` synthesizes the next one in the
 background so playback moves from one sentence to the next without a
