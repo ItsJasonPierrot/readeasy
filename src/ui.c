@@ -461,14 +461,13 @@ static void goto_line(WINDOW *pad, const int *row, int content_rows,
   if(old >= 0 && old != cur) paint_line(pad, row, old, normal_attr);
   paint_line(pad, row, cur, A_REVERSE);
 
-  if(row[cur] < *top)                 *top = row[cur];
-  else if(row[cur] > *top + rows - 1)  *top = row[cur] - rows + 1;
-
-  if(*top < 0) *top = 0;
   {
+    int target = row[cur] - rows / 2;
     int maxtop = content_rows - rows;
     if(maxtop < 0) maxtop = 0;
-    if(*top > maxtop) *top = maxtop;
+    if(target < 0) target = 0;
+    if(target > maxtop) target = maxtop;
+    *top = target;
   }
 
   prefresh(pad, *top, 0, 0, 0, rows - 1, cols - 1);
