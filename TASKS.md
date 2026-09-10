@@ -54,9 +54,10 @@ week+.
       current one with `A_DIM`; toggle with `f`, or start with `--focus`. The
       dimming follows the cursor and playback and survives resize; the current
       sentence keeps its reverse highlight.
-- [ ] ★ **Reading column (`--width`).** Cap line width (~60–70 cols) and centre
-      the column, with a blank line between sentences. Full-width lines are
-      hard for dyslexic readers (the eye loses the return). Big, cheap win. **M**
+- [x] ★ **Reading column (`--width`).** (done 2026-09-10) `--width N` (or the
+      `[` / `]` keys) wraps text to a centred column with a blank line between
+      sentences; recentres on resize, and `]` past full width returns to full
+      width. Works together with focus mode.
 - [ ] **Theme presets (`--theme`).** Replace the hardcoded blue/cream with
       3–4 presets, including a cream / low-contrast dyslexia-friendly palette
       and a true high-contrast one. **M**

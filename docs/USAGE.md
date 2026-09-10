@@ -50,6 +50,7 @@ error.
 | Option | Description |
 | --- | --- |
 | `-r`, `--rate N` | Starting speaking speed in words per minute (clamped to 80–400; default 180). Can also be changed live with `+` / `-`. |
+| `-w`, `--width N` | Wrap text to N columns and centre it as a reading column (minimum 20). Off by default (full width). Adjust live with `[` / `]`. |
 | `--voice NAME` | Text-to-speech voice, passed to `say -v NAME`. List the available voices with `say -v '?'`. |
 | `--focus` | Start in focus mode (dim everything except the current sentence). Toggle at any time with `f`. |
 | `--no-color` | Do not apply the color theme; use the terminal's default colors (the current sentence and status bar are shown in reverse video). |
@@ -77,6 +78,8 @@ While a file is open, these keys work:
 | `+` | Speak faster (increase words per minute). |
 | `-` | Speak slower (decrease words per minute). |
 | `f` | Toggle focus mode (dim all but the current sentence). |
+| `[` | Narrow the centred reading column. |
+| `]` | Widen the reading column (past full width turns it off). |
 | `Ctrl-L` | Redraw the screen (see *Recovering the display* below). |
 | `q` | Quit `readeasy`. If speech is playing, it stops first. |
 
@@ -122,6 +125,14 @@ easier reading. The dimming follows the cursor as you move and as playback
 advances; press `f` again to turn it off. (Dimming uses the terminal's faint
 attribute, so on a terminal that doesn't support faint text it simply has no
 visible effect.)
+
+### Reading column
+
+By default the text fills the whole terminal width. `--width N` (or the `[` /
+`]` keys) wraps it to a narrower column of N characters and centres it, with a
+blank line between sentences. A shorter line length is easier for many readers
+to follow than full-width text. Widening past the terminal width with `]` turns
+the column off and returns to full width.
 
 While a sentence is playing, `readeasy` synthesizes the next one in the
 background so playback moves from one sentence to the next without a

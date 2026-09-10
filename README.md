@@ -144,6 +144,7 @@ pbpaste | readeasy                    # whatever you've copied (macOS clipboard)
 | Option | What it does |
 | --- | --- |
 | `-r`, `--rate N` | Starting speed in words per minute (80–400, default 180). You can also change it live with `+` / `-`. |
+| `-w`, `--width N` | Wrap text to N columns and centre it (a reading column; min 20). Adjust live with `[` / `]`. |
 | `--voice NAME` | Voice to use, passed to `say -v` (list voices with `say -v '?'`). |
 | `--focus` | Start in focus mode (dim all but the current sentence; toggle with `f`). |
 | `--no-color` | Skip the color theme and use your terminal's default colors. |
@@ -168,6 +169,7 @@ Once the file is open, use these keys:
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
 | `+` / `-` | Speak faster or slower (words per minute). Takes effect as reading continues. |
 | `f` | Toggle **focus mode** — dim everything except the current sentence. |
+| `[` / `]` | Narrow or widen the centred reading column (`]` past full width turns it off). |
 | `Ctrl-L` | Redraw the screen (useful if it looks stale after switching terminal tabs). |
 | `q` | Quit the program. |
 

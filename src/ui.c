@@ -16,6 +16,9 @@ enum { STOPPED, SYNTH, PLAY };
 static volatile sig_atomic_t curses_active = 0;
 static short color_pair = 1;
 static attr_t normal_attr = A_NORMAL;
+static int text_width = 0;
+static int text_col = 0;
+static int line_gap = 0;
 static pid_t synth_pid = 0;
 static pid_t play_pid = 0;
 static char audio_dir[] = "/tmp/readeasy.XXXXXX";
@@ -53,6 +56,7 @@ static void on_signal(int sig){
 static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
                          int *sent_row, int *content_rows);
 static int page_to(const int *sent_row, int nsent, int cur, int delta);
+static void set_layout(int width, int cols);
 static void apply_base(WINDOW *pad, const int *sent_row, int nsent);
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr);
 static void goto_line(WINDOW *pad, const int *row, int content_rows,
@@ -78,6 +82,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   int ready = -1;
   int rate = opts->rate;
   int focus = opts->focus;
+  int width = opts->width;
   const char *voice = opts->voice;
   char *pcur = audio_a, *pnext = audio_b, *pswap;
 
@@ -123,6 +128,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   getmaxyx(stdscr, rows, cols);
   has_status = rows > 1;
   view_rows = has_status ? rows - 1 : rows;
+  set_layout(width, cols);
 
   wbkgd(stdscr, COLOR_PAIR(color_pair));
   clear();
@@ -169,6 +175,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       getmaxyx(stdscr, rows, cols);
       has_status = rows > 1;
       view_rows = has_status ? rows - 1 : rows;
+      set_layout(width, cols);
       if(sbar){ delwin(sbar); sbar = NULL; }
       if(has_status){
         sbar = newwin(1, cols, rows - 1, 0);
@@ -254,6 +261,29 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       }
     }
 
+    if(character == '[' || character == ']'){
+      if(character == '['){
+        if(width <= 0 || width > cols) width = cols;
+        width -= WIDTH_STEP;
+        if(width < WIDTH_MIN) width = WIDTH_MIN;
+      } else if(width > 0){
+        width += WIDTH_STEP;
+        if(width >= cols) width = 0;
+      }
+      set_layout(width, cols);
+      if(nsent > 0){
+        int off = sent_row[cur] - top;
+        WINDOW *np = build_pad(sent, nsent, rows, cols, sent_row, &content_rows);
+        if(np != NULL){
+          delwin(pad);
+          pad = np;
+          top = sent_row[cur] - off;
+        }
+        if(focus) apply_base(pad, sent_row, nsent);
+        goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+      }
+    }
+
     if(astate == SYNTH){
       if(waitpid(synth_pid, NULL, WNOHANG) > 0){
         synth_i = -1;
@@ -318,7 +348,7 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
                          int *sent_row, int *content_rows){
   char **wrapped = nsent > 0 ? calloc((size_t)nsent, sizeof(char *)) : NULL;
   if(nsent > 0 && wrapped){
-    for(int i = 0; i < nsent; i++) wrapped[i] = wrap_sentence(sent[i], cols);
+    for(int i = 0; i < nsent; i++) wrapped[i] = wrap_sentence(sent[i], text_width);
   }
 
   int total = 0;
@@ -326,10 +356,10 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
     if(wrapped && wrapped[i]){
       int lines = 1;
       for(const char *c = wrapped[i]; *c; c++) if(*c == '\n') lines++;
-      total += lines;
+      total += lines + line_gap;
     } else {
       int len = (int)strlen(sent[i]);
-      total += (cols > 0 ? len / cols : len) + 1;
+      total += (text_width > 0 ? len / text_width : len) + 1 + line_gap;
     }
   }
   int pad_height = total + 2;
@@ -353,7 +383,7 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
       for(;;){
         const char *nl = strchr(ls, '\n');
         int len = nl ? (int)(nl - ls) : (int)strlen(ls);
-        if(len > 0) mvwaddnstr(pad, row, 0, ls, len);
+        if(len > 0) mvwaddnstr(pad, row, text_col, ls, len);
         row++;
         if(!nl) break;
         ls = nl + 1;
@@ -363,13 +393,14 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
       int rem = (int)strlen(b);
       if(rem == 0) row++;
       while(rem > 0){
-        int len = rem > cols ? cols : rem;
-        mvwaddnstr(pad, row, 0, b, len);
+        int len = rem > text_width ? text_width : rem;
+        mvwaddnstr(pad, row, text_col, b, len);
         row++;
         b += len;
         rem -= len;
       }
     }
+    row += line_gap;
     sent_row[i+1] = row;
   }
 
@@ -396,15 +427,24 @@ static int page_to(const int *sent_row, int nsent, int cur, int delta){
   return best;
 }
 
+static void set_layout(int width, int cols){
+  int w = (width <= 0 || width > cols) ? cols : width;
+  if(w < 1) w = 1;
+  text_width = w;
+  text_col = (cols - w) / 2;
+  line_gap = (w < cols) ? 1 : 0;
+}
+
 static void apply_base(WINDOW *pad, const int *sent_row, int nsent){
   int rows = sent_row[nsent];
   for(int r = 0; r < rows; r++)
-    mvwchgat(pad, r, 0, -1, normal_attr, color_pair, NULL);
+    mvwchgat(pad, r, text_col, text_width, normal_attr, color_pair, NULL);
 }
 
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr){
-  for(int r = row[i]; r < row[i+1]; r++)
-    mvwchgat(pad, r, 0, -1, attr, color_pair, NULL);
+  int end = row[i+1] - line_gap;
+  for(int r = row[i]; r < end; r++)
+    mvwchgat(pad, r, text_col, text_width, attr, color_pair, NULL);
 }
 
 static void goto_line(WINDOW *pad, const int *row, int content_rows,

@@ -131,6 +131,9 @@ Check that:
   speed, and updates as the cursor moves and playback advances.
 - `f` (or `--focus`) dims all but the current sentence, and the dimming
   follows the cursor and playback; toggling it off restores full brightness.
+- `--width N` (or `[` / `]`) wraps the text to a centred column of N columns
+  with a blank line between sentences; it recentres on resize and `]` past
+  full width returns to full-width layout.
 - `+` / `-` change the speaking speed (shown as `wpm` in the status bar),
   clamped between 80 and 400.
 - Resizing the terminal re-flows the text to the new width (status bar stays

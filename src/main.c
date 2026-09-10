@@ -18,6 +18,7 @@ static void usage(FILE *f){
 "\n"
 "Options:\n"
 "  -r, --rate N     starting speed in words per minute (80-400, default 180)\n"
+"  -w, --width N    wrap text to N columns and centre it (min 20)\n"
 "      --voice NAME text-to-speech voice (passed to `say -v`)\n"
 "      --focus      dim everything except the current sentence\n"
 "      --no-color   do not apply the color theme\n"
@@ -30,10 +31,12 @@ static void usage(FILE *f){
 int main(int argc, char *argv[]){
   char *buffer;
   int input_text = STDIN_FILENO;
-  ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .color = 1, .focus = 0 };
+  ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .color = 1,
+                   .focus = 0, .width = 0 };
 
   static struct option longopts[] = {
     {"rate",     required_argument, 0, 'r'},
+    {"width",    required_argument, 0, 'w'},
     {"voice",    required_argument, 0, 'V'},
     {"focus",    no_argument,       0, 'F'},
     {"no-color", no_argument,       0, 'C'},
@@ -43,7 +46,7 @@ int main(int argc, char *argv[]){
   };
 
   int c;
-  while((c = getopt_long(argc, argv, "r:vh", longopts, NULL)) != -1){
+  while((c = getopt_long(argc, argv, "r:w:vh", longopts, NULL)) != -1){
     switch(c){
       case 'r': {
         char *end;
@@ -55,6 +58,18 @@ int main(int argc, char *argv[]){
           return 1;
         }
         opts.rate = (int)v;
+        break;
+      }
+      case 'w': {
+        char *end;
+        long v = strtol(optarg, &end, 10);
+        if(*optarg == '\0' || *end != '\0' || v < WIDTH_MIN){
+          fprintf(stderr,
+                  "readeasy: --width must be a number of at least %d\n",
+                  WIDTH_MIN);
+          return 1;
+        }
+        opts.width = (int)v;
         break;
       }
       case 'V': opts.voice = optarg;      break;
