@@ -43,13 +43,12 @@ week+.
 
 ## Next up (★)
 
-- [ ] ★ **Theme presets (`--theme NAME`).** Named palettes on top of the
-      current color plumbing — including a cream / low-contrast dyslexia
-      palette and a true high-contrast one; runtime cycle key. **M**
-      *(in progress)*
-- [ ] ★ **Config file** (`~/.config/readeasy/config`). Persist rate, voice,
-      theme, width, focus, color so settings are set once, not retyped. CLI
-      flags override the file. Core to "simple to use." **M** *(in progress)*
+- [x] ★ **Theme presets (`--theme NAME`).** (done 2026-09-10) Palettes: none,
+      blue, cream (dyslexia dark-on-cream), contrast (white-on-black), dark.
+      `--theme NAME`, `t` cycles, `--color` = `--theme blue`.
+- [x] ★ **Config file** (`~/.config/readeasy/config`). (done 2026-09-10)
+      `key value` lines for rate, width, voice, theme, focus; CLI flags
+      override; invalid lines ignored.
 - [ ] ★ **Unit tests for `reflow.c`.** `build_sentences` / `wrap_sentence` are
       pure and fiddly — a small feed-input/assert-output harness protects them
       before more refactors. **S**

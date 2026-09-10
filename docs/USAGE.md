@@ -214,6 +214,38 @@ If `readeasy` is installed globally (`make install`), drop the `./` and run
 
 ---
 
+## Configuration file
+
+`readeasy` reads defaults from `~/.config/readeasy/config` (or
+`$XDG_CONFIG_HOME/readeasy/config`) if it exists, so you can set your
+preferences once instead of passing flags every time. Command-line options
+override the file.
+
+The format is one `key value` per line; a line starting with `#` is a comment.
+Recognised keys:
+
+| Key | Value |
+| --- | --- |
+| `rate` | Starting speed in words per minute, 80–400. |
+| `width` | Reading-column width (minimum 20). |
+| `voice` | Voice name (as in `say -v '?'`). |
+| `theme` | `none`, `blue`, `cream`, `contrast`, or `dark`. |
+| `focus` | `on` or `off`. |
+
+Example `~/.config/readeasy/config`:
+
+```
+rate 200
+theme cream
+width 66
+focus on
+```
+
+Unrecognised keys and invalid values are ignored, so a small typo won't stop
+`readeasy` from running.
+
+---
+
 ## Limits
 
 | Limit | Value | Notes |

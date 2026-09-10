@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <getopt.h>
 #include "input.h"
 #include "ui.h"
@@ -9,6 +10,63 @@
 #ifndef READEASY_VERSION
 #define READEASY_VERSION "1.0.0"
 #endif
+
+static int parse_bool(const char *s){
+  return (!strcmp(s, "on") || !strcmp(s, "true") ||
+          !strcmp(s, "yes") || !strcmp(s, "1"));
+}
+
+static void load_config(ui_opts *opts){
+  static char voice_store[128];
+  char path[512];
+  const char *xdg = getenv("XDG_CONFIG_HOME");
+  const char *home = getenv("HOME");
+
+  if(xdg && *xdg)
+    snprintf(path, sizeof path, "%s/readeasy/config", xdg);
+  else if(home && *home)
+    snprintf(path, sizeof path, "%s/.config/readeasy/config", home);
+  else
+    return;
+
+  FILE *f = fopen(path, "r");
+  if(f == NULL) return;
+
+  char line[512];
+  while(fgets(line, sizeof line, f)){
+    char *p = line;
+    while(*p == ' ' || *p == '\t') p++;
+    if(*p == '#' || *p == '\n' || *p == '\0') continue;
+
+    char *key = p;
+    while(*p && *p != ' ' && *p != '\t' && *p != '\n') p++;
+    if(*p) *p++ = '\0';
+    while(*p == ' ' || *p == '\t') p++;
+
+    char *val = p;
+    size_t vl = strlen(val);
+    while(vl > 0 && (val[vl-1] == '\n' || val[vl-1] == '\r' ||
+                     val[vl-1] == ' '  || val[vl-1] == '\t')) val[--vl] = '\0';
+
+    if(!strcmp(key, "rate")){
+      char *e; long v = strtol(val, &e, 10);
+      if(*val && *e == '\0' && v >= RATE_MIN && v <= RATE_MAX) opts->rate = (int)v;
+    } else if(!strcmp(key, "width")){
+      char *e; long v = strtol(val, &e, 10);
+      if(*val && *e == '\0' && v >= WIDTH_MIN) opts->width = (int)v;
+    } else if(!strcmp(key, "voice")){
+      snprintf(voice_store, sizeof voice_store, "%s", val);
+      opts->voice = voice_store;
+    } else if(!strcmp(key, "theme")){
+      int idx = ui_theme_index(val);
+      if(idx >= 0) opts->theme = idx;
+    } else if(!strcmp(key, "focus")){
+      opts->focus = parse_bool(val);
+    }
+  }
+
+  fclose(f);
+}
 
 static void usage(FILE *f){
   fputs(
@@ -34,6 +92,8 @@ int main(int argc, char *argv[]){
   int input_text = STDIN_FILENO;
   ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .theme = 0,
                    .focus = 0, .width = 0 };
+
+  load_config(&opts);
 
   static struct option longopts[] = {
     {"rate",     required_argument, 0, 'r'},

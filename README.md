@@ -158,6 +158,10 @@ For example, read a PDF slowly in a chosen voice:
 pdftotext paper.pdf - | readeasy --rate 140 --voice Daniel
 ```
 
+To avoid retyping options, put defaults in `~/.config/readeasy/config` (one
+`key value` per line — `rate`, `width`, `voice`, `theme`, `focus`); flags on the
+command line override them. See [docs/USAGE.md](docs/USAGE.md#configuration-file).
+
 ### Controls
 
 Once the file is open, use these keys:
