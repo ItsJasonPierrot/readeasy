@@ -53,7 +53,7 @@ error.
 | `-w`, `--width N` | Wrap text to N columns and centre it as a reading column (minimum 20). Off by default (full width). Adjust live with `[` / `]`. |
 | `--voice NAME` | Text-to-speech voice, passed to `say -v NAME`. List the available voices with `say -v '?'`. |
 | `--focus` | Start in focus mode (dim everything except the current sentence). Toggle at any time with `f`. |
-| `--no-color` | Do not apply the color theme; use the terminal's default colors (the current sentence and status bar are shown in reverse video). |
+| `--color` | Apply the blue/cream color theme. Off by default — the terminal's own colors are used, with the current sentence and status bar shown in reverse video. (`--no-color` is accepted too and is the default.) |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
 
@@ -106,10 +106,10 @@ shows which sentence you are on.
 
 The bottom line of the screen is a status bar. On the left it shows the file
 name (or `(stdin)` for piped input), your position as `sentence/total`, the
-percent through the text, whether it is `playing` or `paused`, and the current
-speaking speed in words per minute (`wpm`). On the right, when the window is
-wide enough, it lists the main keys. It updates as you move the cursor, change
-the speed, and as playback advances.
+percent through the text, the total word count, whether it is `playing` or
+`paused`, and the current speaking speed in words per minute (`wpm`). On the
+right, when the window is wide enough, it lists the main keys. It updates as
+you move the cursor, change the speed, and as playback advances.
 
 ### Speaking speed
 

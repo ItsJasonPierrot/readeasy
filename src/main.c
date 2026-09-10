@@ -21,7 +21,7 @@ static void usage(FILE *f){
 "  -w, --width N    wrap text to N columns and centre it (min 20)\n"
 "      --voice NAME text-to-speech voice (passed to `say -v`)\n"
 "      --focus      dim everything except the current sentence\n"
-"      --no-color   do not apply the color theme\n"
+"      --color      apply the blue/cream color theme (off by default)\n"
 "  -v, --version    print version and exit\n"
 "  -h, --help       print this help and exit\n"
 "\n"
@@ -31,7 +31,7 @@ static void usage(FILE *f){
 int main(int argc, char *argv[]){
   char *buffer;
   int input_text = STDIN_FILENO;
-  ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .color = 1,
+  ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .color = 0,
                    .focus = 0, .width = 0 };
 
   static struct option longopts[] = {
@@ -39,7 +39,8 @@ int main(int argc, char *argv[]){
     {"width",    required_argument, 0, 'w'},
     {"voice",    required_argument, 0, 'V'},
     {"focus",    no_argument,       0, 'F'},
-    {"no-color", no_argument,       0, 'C'},
+    {"color",    no_argument,       0, 'C'},
+    {"no-color", no_argument,       0, 'N'},
     {"version",  no_argument,       0, 'v'},
     {"help",     no_argument,       0, 'h'},
     {0, 0, 0, 0}
@@ -74,7 +75,8 @@ int main(int argc, char *argv[]){
       }
       case 'V': opts.voice = optarg;      break;
       case 'F': opts.focus = 1;           break;
-      case 'C': opts.color = 0;           break;
+      case 'C': opts.color = 1;           break;
+      case 'N': opts.color = 0;           break;
       case 'v': printf("readeasy %s\n", READEASY_VERSION); return 0;
       case 'h': usage(stdout);            return 0;
       default:  usage(stderr);            return 1;

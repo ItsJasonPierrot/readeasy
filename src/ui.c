@@ -64,7 +64,7 @@ static void goto_line(WINDOW *pad, const int *row, int content_rows,
 static void stop_audio(pid_t *synth_pid, pid_t *play_pid,
                        int *synth_i, int *ready);
 static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
-                        int playing, int rate, int cols);
+                        int playing, int rate, int words, int cols);
 
 int run_ui(char *text, const char *name, const ui_opts *opts){
   int rows, cols, view_rows, has_status;
@@ -93,6 +93,16 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
 
   sent = build_sentences(text, &nsent);
 
+  int words = 0;
+  {
+    int in_word = 0;
+    for(const char *p = text; *p; p++){
+      if(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r') in_word = 0;
+      else if(!in_word){ in_word = 1; words++; }
+    }
+  }
+
+  setlocale(LC_ALL, "");
   initscr();
   curses_active = 1;
   signal(SIGINT,  on_signal);
@@ -100,7 +110,6 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   signal(SIGHUP,  on_signal);
   signal(SIGQUIT, on_signal);
   atexit(cleanup);
-  setlocale(LC_ALL, "");
   start_color();
   if(opts->color){
     if (can_change_color()) {
@@ -165,7 +174,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
     goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
   else
     prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
-  if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, cols);
+  if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
 
   while(1){
     timeout(astate == STOPPED ? -1 : 100);
@@ -200,7 +209,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
       else
         prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
-      if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, cols);
+      if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
       continue;
     }
 
@@ -333,7 +342,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         }
       }
     }
-    if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, cols);
+    if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
   }
 
   delwin(pad);
@@ -466,13 +475,14 @@ static void goto_line(WINDOW *pad, const int *row, int content_rows,
 }
 
 static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
-                        int playing, int rate, int cols){
+                        int playing, int rate, int words, int cols){
   werase(sbar);
   wmove(sbar, 0, 1);
   if(nsent > 0){
     int pct = ((cur + 1) * 100) / nsent;
-    wprintw(sbar, "%s   %d/%d  %d%%   %s   %d wpm",
-            name, cur + 1, nsent, pct, playing ? "playing" : "paused", rate);
+    wprintw(sbar, "%s   %d/%d  %d%%   %d words   %s   %d wpm",
+            name, cur + 1, nsent, pct, words,
+            playing ? "playing" : "paused", rate);
   } else {
     wprintw(sbar, "%s   (no readable text)", name);
   }

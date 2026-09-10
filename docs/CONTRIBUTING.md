@@ -127,8 +127,11 @@ Check that:
   moves between sentences without a long gap.
 - Pausing with `Space` leaves the cursor on the current sentence; pressing
   `Space` again resumes from that sentence (unless the cursor was moved).
-- The bottom status bar shows the file name, position, percent, state, and
-  speed, and updates as the cursor moves and playback advances.
+- The bottom status bar shows the file name, position, percent, word count,
+  state, and speed, and updates as the cursor moves and playback advances.
+- Typographic characters (curly quotes, em dashes, ellipses, etc.) display
+  correctly, not as mojibake — `setlocale` runs before `initscr`.
+- The color theme is off by default; `--color` turns it on.
 - `f` (or `--focus`) dims all but the current sentence, and the dimming
   follows the cursor and playback; toggling it off restores full brightness.
 - `--width N` (or `[` / `]`) wraps the text to a centred column of N columns

@@ -147,7 +147,7 @@ pbpaste | readeasy                    # whatever you've copied (macOS clipboard)
 | `-w`, `--width N` | Wrap text to N columns and centre it (a reading column; min 20). Adjust live with `[` / `]`. |
 | `--voice NAME` | Voice to use, passed to `say -v` (list voices with `say -v '?'`). |
 | `--focus` | Start in focus mode (dim all but the current sentence; toggle with `f`). |
-| `--no-color` | Skip the color theme and use your terminal's default colors. |
+| `--color` | Apply the blue/cream color theme. Off by default — the plain terminal colors are used, with the current sentence and status bar in reverse video. |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
 
@@ -180,8 +180,9 @@ so you can see what is being read. If you pause and then press `Space` again
 without moving the cursor, reading picks up from the same sentence.
 
 A status bar along the bottom shows the file name, your position (sentence
-number, total, and percent), whether it is playing or paused, the current
-speaking speed in words per minute, and a reminder of the keys.
+number, total, and percent), the total word count, whether it is playing or
+paused, the current speaking speed in words per minute, and a reminder of the
+keys.
 
 A full reference — including every error message and limit — is in
 [docs/USAGE.md](docs/USAGE.md).
