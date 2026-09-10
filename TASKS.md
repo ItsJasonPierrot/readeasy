@@ -67,7 +67,6 @@ week+.
       can follow. Biggest reach-multiplier. **M**
 - [ ] **Native `readeasy file.pdf`.** Auto-run `pdftotext file.pdf -` for a
       `.pdf` argument. (Spun-off task exists.) **S**
-- [ ] **`--list-voices`.** Wrap `say -v '?'`. **S**
 - [ ] **Linux speech backend.** Abstract `speech.c` to also use `espeak-ng` /
       `spd-say` / Piper. ~doubles the audience. **L**
 
