@@ -15,6 +15,7 @@ enum { STOPPED, SYNTH, PLAY };
 
 static volatile sig_atomic_t curses_active = 0;
 static short color_pair = 1;
+static attr_t normal_attr = A_NORMAL;
 static pid_t synth_pid = 0;
 static pid_t play_pid = 0;
 static char audio_dir[] = "/tmp/readeasy.XXXXXX";
@@ -52,6 +53,7 @@ static void on_signal(int sig){
 static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
                          int *sent_row, int *content_rows);
 static int page_to(const int *sent_row, int nsent, int cur, int delta);
+static void apply_base(WINDOW *pad, const int *sent_row, int nsent);
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr);
 static void goto_line(WINDOW *pad, const int *row, int content_rows,
                       int rows, int cols, int *top, int old, int cur);
@@ -75,12 +77,14 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   int synth_i = -1;
   int ready = -1;
   int rate = opts->rate;
+  int focus = opts->focus;
   const char *voice = opts->voice;
   char *pcur = audio_a, *pnext = audio_b, *pswap;
 
   if(rate < RATE_MIN) rate = RATE_MIN;
   if(rate > RATE_MAX) rate = RATE_MAX;
   color_pair = opts->color ? 1 : 0;
+  normal_attr = focus ? A_DIM : A_NORMAL;
 
   sent = build_sentences(text, &nsent);
 
@@ -150,6 +154,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
     if(sbar) wbkgd(sbar, COLOR_PAIR(color_pair) | A_REVERSE);
   }
 
+  if(focus && nsent > 0) apply_base(pad, sent_row, nsent);
   if(nsent > 0)
     goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
   else
@@ -183,6 +188,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
           top = sent_row[cur] - off;
         }
       }
+      if(focus && nsent > 0) apply_base(pad, sent_row, nsent);
       if(nsent > 0)
         goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
       else
@@ -237,6 +243,15 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
     if(character == '-' || character == '_'){
       rate -= RATE_STEP;
       if(rate < RATE_MIN) rate = RATE_MIN;
+    }
+
+    if(character == 'f'){
+      focus = !focus;
+      normal_attr = focus ? A_DIM : A_NORMAL;
+      if(nsent > 0){
+        apply_base(pad, sent_row, nsent);
+        goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+      }
     }
 
     if(astate == SYNTH){
@@ -381,6 +396,12 @@ static int page_to(const int *sent_row, int nsent, int cur, int delta){
   return best;
 }
 
+static void apply_base(WINDOW *pad, const int *sent_row, int nsent){
+  int rows = sent_row[nsent];
+  for(int r = 0; r < rows; r++)
+    mvwchgat(pad, r, 0, -1, normal_attr, color_pair, NULL);
+}
+
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr){
   for(int r = row[i]; r < row[i+1]; r++)
     mvwchgat(pad, r, 0, -1, attr, color_pair, NULL);
@@ -388,7 +409,7 @@ static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr){
 
 static void goto_line(WINDOW *pad, const int *row, int content_rows,
                       int rows, int cols, int *top, int old, int cur){
-  if(old >= 0 && old != cur) paint_line(pad, row, old, A_NORMAL);
+  if(old >= 0 && old != cur) paint_line(pad, row, old, normal_attr);
   paint_line(pad, row, cur, A_REVERSE);
 
   if(row[cur] < *top)                 *top = row[cur];
@@ -416,7 +437,7 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   Up/Dn move   +/- speed   q quit ";
+  const char *hint = "Space play/pause   Up/Dn move   +/- speed   f focus   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);

@@ -19,6 +19,7 @@ static void usage(FILE *f){
 "Options:\n"
 "  -r, --rate N     starting speed in words per minute (80-400, default 180)\n"
 "      --voice NAME text-to-speech voice (passed to `say -v`)\n"
+"      --focus      dim everything except the current sentence\n"
 "      --no-color   do not apply the color theme\n"
 "  -v, --version    print version and exit\n"
 "  -h, --help       print this help and exit\n"
@@ -29,11 +30,12 @@ static void usage(FILE *f){
 int main(int argc, char *argv[]){
   char *buffer;
   int input_text = STDIN_FILENO;
-  ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .color = 1 };
+  ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .color = 1, .focus = 0 };
 
   static struct option longopts[] = {
     {"rate",     required_argument, 0, 'r'},
     {"voice",    required_argument, 0, 'V'},
+    {"focus",    no_argument,       0, 'F'},
     {"no-color", no_argument,       0, 'C'},
     {"version",  no_argument,       0, 'v'},
     {"help",     no_argument,       0, 'h'},
@@ -56,6 +58,7 @@ int main(int argc, char *argv[]){
         break;
       }
       case 'V': opts.voice = optarg;      break;
+      case 'F': opts.focus = 1;           break;
       case 'C': opts.color = 0;           break;
       case 'v': printf("readeasy %s\n", READEASY_VERSION); return 0;
       case 'h': usage(stdout);            return 0;

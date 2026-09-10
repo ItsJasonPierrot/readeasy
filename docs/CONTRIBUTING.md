@@ -129,6 +129,8 @@ Check that:
   `Space` again resumes from that sentence (unless the cursor was moved).
 - The bottom status bar shows the file name, position, percent, state, and
   speed, and updates as the cursor moves and playback advances.
+- `f` (or `--focus`) dims all but the current sentence, and the dimming
+  follows the cursor and playback; toggling it off restores full brightness.
 - `+` / `-` change the speaking speed (shown as `wpm` in the status bar),
   clamped between 80 and 400.
 - Resizing the terminal re-flows the text to the new width (status bar stays

@@ -145,6 +145,7 @@ pbpaste | readeasy                    # whatever you've copied (macOS clipboard)
 | --- | --- |
 | `-r`, `--rate N` | Starting speed in words per minute (80–400, default 180). You can also change it live with `+` / `-`. |
 | `--voice NAME` | Voice to use, passed to `say -v` (list voices with `say -v '?'`). |
+| `--focus` | Start in focus mode (dim all but the current sentence; toggle with `f`). |
 | `--no-color` | Skip the color theme and use your terminal's default colors. |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
@@ -166,6 +167,7 @@ Once the file is open, use these keys:
 | `Home` / `End` (or `g` / `G`) | Jump to the first or last sentence. |
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
 | `+` / `-` | Speak faster or slower (words per minute). Takes effect as reading continues. |
+| `f` | Toggle **focus mode** — dim everything except the current sentence. |
 | `Ctrl-L` | Redraw the screen (useful if it looks stale after switching terminal tabs). |
 | `q` | Quit the program. |
 

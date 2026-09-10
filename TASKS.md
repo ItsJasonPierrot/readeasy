@@ -50,9 +50,10 @@ week+.
 
 ## 2. Accessibility — the mission (highest value)
 
-- [ ] ★ **Focus / dim mode.** Dim every row except the current sentence (or
-      current + next) with `A_DIM`. Highest-value ADHD/ASD feature — kills
-      visual overwhelm. Cursor row is already tracked. **M**
+- [x] ★ **Focus / dim mode.** (done 2026-09-10) Dim every sentence except the
+      current one with `A_DIM`; toggle with `f`, or start with `--focus`. The
+      dimming follows the cursor and playback and survives resize; the current
+      sentence keeps its reverse highlight.
 - [ ] ★ **Reading column (`--width`).** Cap line width (~60–70 cols) and centre
       the column, with a blank line between sentences. Full-width lines are
       hard for dyslexic readers (the eye loses the return). Big, cheap win. **M**

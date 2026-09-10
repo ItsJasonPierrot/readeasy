@@ -51,6 +51,7 @@ error.
 | --- | --- |
 | `-r`, `--rate N` | Starting speaking speed in words per minute (clamped to 80–400; default 180). Can also be changed live with `+` / `-`. |
 | `--voice NAME` | Text-to-speech voice, passed to `say -v NAME`. List the available voices with `say -v '?'`. |
+| `--focus` | Start in focus mode (dim everything except the current sentence). Toggle at any time with `f`. |
 | `--no-color` | Do not apply the color theme; use the terminal's default colors (the current sentence and status bar are shown in reverse video). |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
@@ -75,6 +76,7 @@ While a file is open, these keys work:
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
 | `+` | Speak faster (increase words per minute). |
 | `-` | Speak slower (decrease words per minute). |
+| `f` | Toggle focus mode (dim all but the current sentence). |
 | `Ctrl-L` | Redraw the screen (see *Recovering the display* below). |
 | `q` | Quit `readeasy`. If speech is playing, it stops first. |
 
@@ -111,6 +113,15 @@ the speed, and as playback advances.
 `+` speeds the voice up and `-` slows it down, in steps of 20 words per minute
 (from 80 up to 400; the default is 180). A change applies to sentences read
 from then on, so it can take a sentence to fully take effect while playing.
+
+### Focus mode
+
+Press `f` (or start with `--focus`) to dim every sentence except the current
+one, so only the sentence you are on stands out. It reduces visual clutter for
+easier reading. The dimming follows the cursor as you move and as playback
+advances; press `f` again to turn it off. (Dimming uses the terminal's faint
+attribute, so on a terminal that doesn't support faint text it simply has no
+visible effect.)
 
 While a sentence is playing, `readeasy` synthesizes the next one in the
 background so playback moves from one sentence to the next without a

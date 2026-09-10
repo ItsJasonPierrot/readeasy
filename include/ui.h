@@ -9,6 +9,7 @@ typedef struct {
   int rate;
   const char *voice;
   int color;
+  int focus;
 } ui_opts;
 
 int run_ui(char *text, const char *name, const ui_opts *opts);
