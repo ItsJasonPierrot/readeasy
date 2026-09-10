@@ -6,6 +6,7 @@ out/
 
 # Compiled executables
 /readeasy
+/tests/test_reflow
 *.exe
 *.out
 *.app

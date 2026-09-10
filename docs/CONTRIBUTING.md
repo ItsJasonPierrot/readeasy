@@ -94,12 +94,28 @@ To remove the executable and the compiled object files:
 make clean
 ```
 
+The version reported by `readeasy --version` is taken from
+`git describe --tags` at build time, so tag a release (e.g. `v1.1.0`) and
+run `make clean && make` to stamp it in. Outside a git checkout it falls back
+to the built-in default.
+
 ---
 
 ## Testing
 
-`readeasy` is tested by hand. After making a change, rebuild and try a few
-cases (use any plain-text file, ideally one exported from a PDF so it has
+The pure text logic in `reflow.c` (`build_sentences`, `wrap_sentence`) has
+unit tests. Run them with:
+
+```bash
+make test
+```
+
+They cover word-boundary wrapping, sentence splitting, and re-flowing of
+hard-wrapped text. Add a case there when you change that logic.
+
+The rest of `readeasy` is tested by hand. After making a change, rebuild and
+try a few cases (use any plain-text file, ideally one exported from a PDF so
+it has
 accented characters and hard-wrapped lines):
 
 ```bash

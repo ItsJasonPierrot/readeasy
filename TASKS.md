@@ -49,9 +49,9 @@ week+.
 - [x] ★ **Config file** (`~/.config/readeasy/config`). (done 2026-09-10)
       `key value` lines for rate, width, voice, theme, focus; CLI flags
       override; invalid lines ignored.
-- [ ] ★ **Unit tests for `reflow.c`.** `build_sentences` / `wrap_sentence` are
-      pure and fiddly — a small feed-input/assert-output harness protects them
-      before more refactors. **S**
+- [x] ★ **Unit tests for `reflow.c`.** (done 2026-09-10) `tests/test_reflow.c`
+      covers wrapping, sentence splitting, and re-flow; run with `make test`
+      (24 cases).
 
 ## Accessibility (rest of the mission)
 
@@ -75,8 +75,9 @@ week+.
 
 - [ ] **CI (GitHub Actions).** Build on macOS with `-Werror`; a `debug` target
       with `-fsanitize=address,undefined`. **M**
-- [ ] **Version from git tags.** Replace the hardcoded `1.0.0` (already behind
-      `-DREADEASY_VERSION`) with the tag at build time; cut tagged releases. **S**
+- [x] **Version from git tags.** (done 2026-09-10) `make` stamps the version
+      from `git describe --tags --always --dirty` via `-DREADEASY_VERSION` (on
+      `src/main.o` only); falls back to the built-in default outside git.
 
 ## Big rocks (later)
 
