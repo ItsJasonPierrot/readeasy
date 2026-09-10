@@ -31,21 +31,20 @@ week+.
 
 ---
 
-## 1. Quick fixes (bugs)
+## 1. Quick fixes (bugs) — done 2026-09-10
 
-- [ ] ★ **Fix `.gitignore` inline comments.** Git only treats `#` as a comment
-      at the **start** of a line, so `.vscode/        # VS Code` is a pattern
-      matching a file literally named that — `.vscode/`, `.idea/`, `*.swp`,
-      `*.swo`, `*~`, `Thumbs.db` are **not** actually ignored. (`.DS_Store`
-      happens to be caught by the global `~/.gitignore_global`, masking the
-      bug.) Put every comment on its own line. **S**
-- [ ] ★ **Validate `--rate`.** `atoi(optarg)` returns `0` for non-numeric
-      input and silently clamps to 80. Reject non-numbers / out-of-range with a
-      plain-language error ("rate must be a number between 80 and 400"). **S**
-- [ ] **Guard `build_pad` height.** `total/eff + 3*nsent + 8` is a generous
-      estimate, but ncurses pads don't auto-grow — an under-estimate silently
-      clips text off the bottom. Add a safety recompute (or a debug assert)
-      before relying on it. **S**
+- [x] ★ **Fix `.gitignore` inline comments.** Comments moved to their own lines,
+      so `.vscode/`, `.idea/`, `*.swp`, `*.swo`, `*~`, `Thumbs.db` are now
+      actually ignored.
+- [x] ★ **Validate `--rate`.** `strtol` with range check; a non-number or
+      out-of-range value prints "--rate must be a number between 80 and 400"
+      and exits 1. Rate bounds now shared via `ui.h`.
+- [x] **Fix `build_pad` height (was: guard).** Replaced the heuristic with an
+      exact row count and switched rendering to explicit per-line positioning
+      (`mvwaddnstr` per wrapped line, no layout `\n`). This removes the
+      clipping risk entirely and also fixed a pre-existing bug: sentences whose
+      wrapped line was exactly the terminal width left a stray blank row and,
+      on long files, prevented scrolling to the end.
 
 ---
 

@@ -11,9 +11,6 @@
 
 enum { STOPPED, SYNTH, PLAY };
 
-#define RATE_DEFAULT 180
-#define RATE_MIN 80
-#define RATE_MAX 400
 #define RATE_STEP 20
 
 static volatile sig_atomic_t curses_active = 0;
@@ -304,30 +301,66 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
 
 static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
                          int *sent_row, int *content_rows){
+  char **wrapped = nsent > 0 ? calloc((size_t)nsent, sizeof(char *)) : NULL;
+  if(nsent > 0 && wrapped){
+    for(int i = 0; i < nsent; i++) wrapped[i] = wrap_sentence(sent[i], cols);
+  }
+
   int total = 0;
-  for(int i = 0; i < nsent; i++) total += (int)strlen(sent[i]);
-  int eff = cols > 8 ? cols - 8 : 1;
-  int pad_height = total / eff + 3 * nsent + 8;
+  for(int i = 0; i < nsent; i++){
+    if(wrapped && wrapped[i]){
+      int lines = 1;
+      for(const char *c = wrapped[i]; *c; c++) if(*c == '\n') lines++;
+      total += lines;
+    } else {
+      int len = (int)strlen(sent[i]);
+      total += (cols > 0 ? len / cols : len) + 1;
+    }
+  }
+  int pad_height = total + 2;
   if(pad_height < rows + 1) pad_height = rows + 1;
 
   WINDOW *pad = newpad(pad_height, cols);
-  if(pad == NULL) return NULL;
+  if(pad == NULL){
+    if(wrapped){
+      for(int i = 0; i < nsent; i++) free(wrapped[i]);
+      free(wrapped);
+    }
+    return NULL;
+  }
   wbkgd(pad, COLOR_PAIR(color_pair));
 
+  int row = 0;
   sent_row[0] = 0;
-  int y, x;
   for(int i = 0; i < nsent; i++){
-    char *wrapped = wrap_sentence(sent[i], cols);
-    if(wrapped){
-      waddstr(pad, wrapped);
-      free(wrapped);
+    if(wrapped && wrapped[i]){
+      const char *ls = wrapped[i];
+      for(;;){
+        const char *nl = strchr(ls, '\n');
+        int len = nl ? (int)(nl - ls) : (int)strlen(ls);
+        if(len > 0) mvwaddnstr(pad, row, 0, ls, len);
+        row++;
+        if(!nl) break;
+        ls = nl + 1;
+      }
     } else {
-      waddstr(pad, sent[i]);
+      const char *b = sent[i];
+      int rem = (int)strlen(b);
+      if(rem == 0) row++;
+      while(rem > 0){
+        int len = rem > cols ? cols : rem;
+        mvwaddnstr(pad, row, 0, b, len);
+        row++;
+        b += len;
+        rem -= len;
+      }
     }
-    waddch(pad, '\n');
-    getyx(pad, y, x);
-    (void)x;
-    sent_row[i+1] = y;
+    sent_row[i+1] = row;
+  }
+
+  if(wrapped){
+    for(int i = 0; i < nsent; i++) free(wrapped[i]);
+    free(wrapped);
   }
   *content_rows = nsent > 0 ? sent_row[nsent] : 0;
   return pad;

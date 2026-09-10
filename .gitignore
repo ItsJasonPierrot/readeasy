@@ -35,16 +35,21 @@ out/
 # Log files
 *.log
 
-# IDE-specific (choose what you use)
-.idea/           # CLion, IntelliJ
-.vscode/         # VS Code
-*.swp            # Vim
-*.swo            # Vim
-*~               # Vim backup
+# IDE-specific
+# CLion, IntelliJ
+.idea/
+# VS Code
+.vscode/
+# Vim
+*.swp
+*.swo
+*~
 
 # OS-specific
-.DS_Store        # macOS
-Thumbs.db        # Windows
+# macOS
+.DS_Store
+# Windows
+Thumbs.db
 
 # Temporary files
 *.tmp

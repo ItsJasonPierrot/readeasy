@@ -29,7 +29,7 @@ static void usage(FILE *f){
 int main(int argc, char *argv[]){
   char *buffer;
   int input_text = STDIN_FILENO;
-  ui_opts opts = { .rate = 180, .voice = NULL, .color = 1 };
+  ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .color = 1 };
 
   static struct option longopts[] = {
     {"rate",     required_argument, 0, 'r'},
@@ -43,7 +43,18 @@ int main(int argc, char *argv[]){
   int c;
   while((c = getopt_long(argc, argv, "r:vh", longopts, NULL)) != -1){
     switch(c){
-      case 'r': opts.rate = atoi(optarg); break;
+      case 'r': {
+        char *end;
+        long v = strtol(optarg, &end, 10);
+        if(*optarg == '\0' || *end != '\0' || v < RATE_MIN || v > RATE_MAX){
+          fprintf(stderr,
+                  "readeasy: --rate must be a number between %d and %d\n",
+                  RATE_MIN, RATE_MAX);
+          return 1;
+        }
+        opts.rate = (int)v;
+        break;
+      }
       case 'V': opts.voice = optarg;      break;
       case 'C': opts.color = 0;           break;
       case 'v': printf("readeasy %s\n", READEASY_VERSION); return 0;
