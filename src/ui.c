@@ -13,6 +13,35 @@ enum { STOPPED, SYNTH, PLAY };
 
 #define RATE_STEP 20
 
+typedef struct {
+  const char *name;
+  int fg[3];
+  int bg[3];
+  short fg_basic;
+  short bg_basic;
+} theme_t;
+
+static const theme_t themes[] = {
+  { "none",     {0,0,0},          {0,0,0},          0,            0           },
+  { "blue",     {1000,780,560},   {60,100,250},     COLOR_YELLOW, COLOR_BLUE  },
+  { "cream",    {210,140,70},     {1000,975,910},   COLOR_BLACK,  COLOR_WHITE },
+  { "contrast", {1000,1000,1000}, {0,0,0},          COLOR_WHITE,  COLOR_BLACK },
+  { "dark",     {820,840,880},    {120,130,150},    COLOR_WHITE,  COLOR_BLACK },
+};
+static const int n_themes = (int)(sizeof themes / sizeof themes[0]);
+
+int ui_theme_count(void){ return n_themes; }
+
+const char *ui_theme_name(int i){
+  return (i >= 0 && i < n_themes) ? themes[i].name : "";
+}
+
+int ui_theme_index(const char *name){
+  for(int i = 0; i < n_themes; i++)
+    if(strcmp(name, themes[i].name) == 0) return i;
+  return -1;
+}
+
 static volatile sig_atomic_t curses_active = 0;
 static short color_pair = 1;
 static attr_t normal_attr = A_NORMAL;
@@ -57,6 +86,7 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
                          int *sent_row, int *content_rows);
 static int page_to(const int *sent_row, int nsent, int cur, int delta);
 static void set_layout(int width, int cols);
+static void apply_theme(int idx);
 static void apply_base(WINDOW *pad, const int *sent_row, int nsent);
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr);
 static void goto_line(WINDOW *pad, const int *row, int content_rows,
@@ -83,12 +113,12 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   int rate = opts->rate;
   int focus = opts->focus;
   int width = opts->width;
+  int theme_idx = opts->theme;
   const char *voice = opts->voice;
   char *pcur = audio_a, *pnext = audio_b, *pswap;
 
   if(rate < RATE_MIN) rate = RATE_MIN;
   if(rate > RATE_MAX) rate = RATE_MAX;
-  color_pair = opts->color ? 1 : 0;
   normal_attr = focus ? A_DIM : A_NORMAL;
 
   sent = build_sentences(text, &nsent);
@@ -111,13 +141,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   signal(SIGQUIT, on_signal);
   atexit(cleanup);
   start_color();
-  if(opts->color){
-    if (can_change_color()) {
-      init_color(COLOR_BLUE,   60, 100, 250);
-      init_color(COLOR_YELLOW, 1000, 780, 560);
-    }
-    init_pair(1, COLOR_YELLOW, COLOR_BLUE);
-  }
+  apply_theme(theme_idx);
   noecho();
   cbreak();
   keypad(stdscr, TRUE);
@@ -293,6 +317,26 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       }
     }
 
+    if(character == 't'){
+      theme_idx = (theme_idx + 1) % n_themes;
+      apply_theme(theme_idx);
+      wbkgd(stdscr, COLOR_PAIR(color_pair));
+      if(sbar) wbkgd(sbar, COLOR_PAIR(color_pair) | A_REVERSE);
+      clearok(curscr, TRUE);
+      if(nsent > 0){
+        WINDOW *np = build_pad(sent, nsent, rows, cols, sent_row, &content_rows);
+        if(np != NULL){ delwin(pad); pad = np; }
+        if(focus) apply_base(pad, sent_row, nsent);
+      }
+      touchwin(stdscr);
+      refresh();
+      if(nsent > 0)
+        goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+      else
+        prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
+      if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
+    }
+
     if(astate == SYNTH){
       if(waitpid(synth_pid, NULL, WNOHANG) > 0){
         synth_i = -1;
@@ -442,6 +486,22 @@ static void set_layout(int width, int cols){
   text_width = w;
   text_col = (cols - w) / 2;
   line_gap = (w < cols) ? 1 : 0;
+}
+
+static void apply_theme(int idx){
+  if(idx <= 0 || idx >= n_themes){
+    color_pair = 0;
+    return;
+  }
+  const theme_t *t = &themes[idx];
+  if(can_change_color()){
+    init_color(COLOR_YELLOW, t->fg[0], t->fg[1], t->fg[2]);
+    init_color(COLOR_BLUE,   t->bg[0], t->bg[1], t->bg[2]);
+    init_pair(1, COLOR_YELLOW, COLOR_BLUE);
+  } else {
+    init_pair(1, t->fg_basic, t->bg_basic);
+  }
+  color_pair = 1;
 }
 
 static void apply_base(WINDOW *pad, const int *sent_row, int nsent){

@@ -53,7 +53,8 @@ error.
 | `-w`, `--width N` | Wrap text to N columns and centre it as a reading column (minimum 20). Off by default (full width). Adjust live with `[` / `]`. |
 | `--voice NAME` | Text-to-speech voice, passed to `say -v NAME`. List the available voices with `say -v '?'`. |
 | `--focus` | Start in focus mode (dim everything except the current sentence). Toggle at any time with `f`. |
-| `--color` | Apply the blue/cream color theme. Off by default — the terminal's own colors are used, with the current sentence and status bar shown in reverse video. (`--no-color` is accepted too and is the default.) |
+| `--theme NAME` | Color theme, one of: `none`, `blue`, `cream`, `contrast`, `dark` (default `none`). `cream` is a low-contrast dark-on-cream palette meant to be dyslexia-friendly; `contrast` is white-on-black. Cycle live with `t`. |
+| `--color` | Shorthand for `--theme blue`. (`--no-color` is also accepted and is the default.) |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
 
@@ -78,6 +79,7 @@ While a file is open, these keys work:
 | `+` | Speak faster (increase words per minute). |
 | `-` | Speak slower (decrease words per minute). |
 | `f` | Toggle focus mode (dim all but the current sentence). |
+| `t` | Cycle the color theme (none → blue → cream → contrast → dark). |
 | `[` | Narrow the centred reading column. |
 | `]` | Widen the reading column (past full width turns it off). |
 | `Ctrl-L` | Redraw the screen (see *Recovering the display* below). |
@@ -133,6 +135,22 @@ By default the text fills the whole terminal width. `--width N` (or the `[` /
 blank line between sentences. A shorter line length is easier for many readers
 to follow than full-width text. Widening past the terminal width with `]` turns
 the column off and returns to full width.
+
+### Color themes
+
+Pick a palette with `--theme NAME`, or cycle through them live with `t`:
+
+- `none` (default) — the terminal's own colors; the current sentence and status
+  bar use reverse video.
+- `blue` — cream text on a deep blue background.
+- `cream` — dark brown text on a warm cream background. Low-contrast and
+  glare-reducing; a common dyslexia-friendly choice.
+- `contrast` — white on black, maximum contrast.
+- `dark` — light grey text on a dark background.
+
+Custom colors need a terminal that can redefine palette entries; otherwise the
+nearest basic colors are used. Note that font, size, line spacing and ligatures
+are your terminal's settings, not `readeasy`'s.
 
 While a sentence is playing, `readeasy` synthesizes the next one in the
 background so playback moves from one sentence to the next without a

@@ -147,7 +147,8 @@ pbpaste | readeasy                    # whatever you've copied (macOS clipboard)
 | `-w`, `--width N` | Wrap text to N columns and centre it (a reading column; min 20). Adjust live with `[` / `]`. |
 | `--voice NAME` | Voice to use, passed to `say -v` (list voices with `say -v '?'`). |
 | `--focus` | Start in focus mode (dim all but the current sentence; toggle with `f`). |
-| `--color` | Apply the blue/cream color theme. Off by default — the plain terminal colors are used, with the current sentence and status bar in reverse video. |
+| `--theme NAME` | Color theme: `none` (default), `blue`, `cream` (dyslexia-friendly dark-on-cream), `contrast` (white-on-black), `dark`. Cycle live with `t`. |
+| `--color` | Shorthand for `--theme blue`. |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
 
@@ -169,6 +170,7 @@ Once the file is open, use these keys:
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
 | `+` / `-` | Speak faster or slower (words per minute). Takes effect as reading continues. |
 | `f` | Toggle **focus mode** — dim everything except the current sentence. |
+| `t` | Cycle the color theme. |
 | `[` / `]` | Narrow or widen the centred reading column (`]` past full width turns it off). |
 | `Ctrl-L` | Redraw the screen (useful if it looks stale after switching terminal tabs). |
 | `q` | Quit the program. |

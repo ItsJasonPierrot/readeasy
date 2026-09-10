@@ -21,7 +21,8 @@ static void usage(FILE *f){
 "  -w, --width N    wrap text to N columns and centre it (min 20)\n"
 "      --voice NAME text-to-speech voice (passed to `say -v`)\n"
 "      --focus      dim everything except the current sentence\n"
-"      --color      apply the blue/cream color theme (off by default)\n"
+"      --theme NAME color theme: none, blue, cream, contrast, dark (default none)\n"
+"      --color      shorthand for --theme blue\n"
 "  -v, --version    print version and exit\n"
 "  -h, --help       print this help and exit\n"
 "\n"
@@ -31,12 +32,13 @@ static void usage(FILE *f){
 int main(int argc, char *argv[]){
   char *buffer;
   int input_text = STDIN_FILENO;
-  ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .color = 0,
+  ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .theme = 0,
                    .focus = 0, .width = 0 };
 
   static struct option longopts[] = {
     {"rate",     required_argument, 0, 'r'},
     {"width",    required_argument, 0, 'w'},
+    {"theme",    required_argument, 0, 'T'},
     {"voice",    required_argument, 0, 'V'},
     {"focus",    no_argument,       0, 'F'},
     {"color",    no_argument,       0, 'C'},
@@ -73,10 +75,22 @@ int main(int argc, char *argv[]){
         opts.width = (int)v;
         break;
       }
-      case 'V': opts.voice = optarg;      break;
-      case 'F': opts.focus = 1;           break;
-      case 'C': opts.color = 1;           break;
-      case 'N': opts.color = 0;           break;
+      case 'T': {
+        int idx = ui_theme_index(optarg);
+        if(idx < 0){
+          fprintf(stderr, "readeasy: unknown theme '%s'. Options:", optarg);
+          for(int i = 0; i < ui_theme_count(); i++)
+            fprintf(stderr, " %s", ui_theme_name(i));
+          fprintf(stderr, "\n");
+          return 1;
+        }
+        opts.theme = idx;
+        break;
+      }
+      case 'V': opts.voice = optarg;              break;
+      case 'F': opts.focus = 1;                   break;
+      case 'C': opts.theme = ui_theme_index("blue"); break;
+      case 'N': opts.theme = 0;                   break;
       case 'v': printf("readeasy %s\n", READEASY_VERSION); return 0;
       case 'h': usage(stdout);            return 0;
       default:  usage(stderr);            return 1;

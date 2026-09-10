@@ -131,7 +131,9 @@ Check that:
   state, and speed, and updates as the cursor moves and playback advances.
 - Typographic characters (curly quotes, em dashes, ellipses, etc.) display
   correctly, not as mojibake — `setlocale` runs before `initscr`.
-- The color theme is off by default; `--color` turns it on.
+- The color theme is off by default; `--theme NAME` selects one (`none`,
+  `blue`, `cream`, `contrast`, `dark`), `t` cycles them, and `--color` is
+  shorthand for `--theme blue`.
 - `f` (or `--focus`) dims all but the current sentence, and the dimming
   follows the cursor and playback; toggling it off restores full brightness.
 - `--width N` (or `[` / `]`) wraps the text to a centred column of N columns

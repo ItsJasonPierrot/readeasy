@@ -10,11 +10,15 @@
 typedef struct {
   int rate;
   const char *voice;
-  int color;
+  int theme;
   int focus;
   int width;
 } ui_opts;
 
 int run_ui(char *text, const char *name, const ui_opts *opts);
+
+int ui_theme_index(const char *name);
+int ui_theme_count(void);
+const char *ui_theme_name(int i);
 
 #endif
