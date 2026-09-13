@@ -17,7 +17,7 @@ int synth_to_file(const char *text, const char *path, int rate,
     char ratebuf[16];
     snprintf(ratebuf, sizeof ratebuf, "%d", rate);
 
-    char *argv[10];
+    char *argv[12];
     int n = 0;
     argv[n++] = "say";
     argv[n++] = "-r";
@@ -28,6 +28,7 @@ int synth_to_file(const char *text, const char *path, int rate,
     }
     argv[n++] = "-o";
     argv[n++] = (char *)path;
+    argv[n++] = "--";
     argv[n++] = (char *)text;
     argv[n]   = NULL;
 

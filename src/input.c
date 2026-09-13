@@ -127,7 +127,7 @@ int read_pdf(const char *path, char **out){
     close(fds[0]);
     dup2(fds[1], STDOUT_FILENO);
     close(fds[1]);
-    execlp("pdftotext", "pdftotext", path, "-", (char *)NULL);
+    execlp("pdftotext", "pdftotext", "--", path, "-", (char *)NULL);
     _exit(127);
   }
 
