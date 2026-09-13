@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <locale.h>
+#include <time.h>
 #include "speech.h"
 #include "reflow.h"
 #include "ui.h"
@@ -55,6 +56,15 @@ static char audio_a[64];
 static char audio_b[64];
 static int audio_ok = 0;
 
+static int kara_on = 1;
+static word_span *kspan = NULL;
+static int knspan = 0;
+static int ktotal = 0;
+static int kidx = -1;
+static double kt0 = 0.0;
+static double kdur = 0.0;
+static int kplaying = 0;
+
 static void cleanup(void){
   if(curses_active){
     endwin();
@@ -95,6 +105,14 @@ static void stop_audio(pid_t *synth_pid, pid_t *play_pid,
                        int *synth_i, int *ready);
 static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
                         int playing, int rate, int words, int cols);
+static void kara_build(char **sent, int cur);
+static void kara_frame(WINDOW *pad, const int *sent_row, int cur);
+static void kara_begin(WINDOW *pad, char **sent, const int *sent_row, int cur,
+                       const char *pfile, int rate, int top, int view_rows,
+                       int cols);
+static void kara_advance(WINDOW *pad, const int *sent_row, int cur,
+                         int top, int view_rows, int cols);
+static void kara_stop(void);
 
 int run_ui(char *text, const char *name, const ui_opts *opts){
   int rows, cols, view_rows, has_status;
@@ -233,6 +251,13 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
       else
         prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
+      if(kplaying && nsent > 0){
+        kara_build(sent, cur);
+        if(kara_on){
+          kara_frame(pad, sent_row, cur);
+          prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+        }
+      }
       if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
       continue;
     }
@@ -243,6 +268,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
                      character == 'g'       || character == 'G')){
       if(astate != STOPPED){
         stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+        kara_stop();
         astate = STOPPED;
       }
       int old = cur;
@@ -267,6 +293,9 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         }
       } else {
         stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+        kara_stop();
+        paint_line(pad, sent_row, cur, A_REVERSE);
+        prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
         astate = STOPPED;
       }
     }
@@ -291,6 +320,10 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       if(nsent > 0){
         apply_base(pad, sent_row, nsent);
         goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+        if(kplaying && kara_on){
+          kara_frame(pad, sent_row, cur);
+          prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+        }
       }
     }
 
@@ -314,6 +347,13 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         }
         if(focus) apply_base(pad, sent_row, nsent);
         goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+        if(kplaying){
+          kara_build(sent, cur);
+          if(kara_on){
+            kara_frame(pad, sent_row, cur);
+            prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+          }
+        }
       }
     }
 
@@ -331,7 +371,20 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
       else
         prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
+      if(kplaying && kara_on && nsent > 0){
+        kara_frame(pad, sent_row, cur);
+        prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+      }
       if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
+    }
+
+    if(character == 'w'){
+      kara_on = !kara_on;
+      if(kplaying && nsent > 0){
+        if(kara_on) kara_frame(pad, sent_row, cur);
+        else paint_line(pad, sent_row, cur, A_REVERSE);
+        prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+      }
     }
 
     if(astate == SYNTH){
@@ -339,6 +392,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         synth_i = -1;
         if(play_file(pcur, &play_pid) == 0){
           astate = PLAY;
+          kara_begin(pad, sent, sent_row, cur, pcur, rate, top, view_rows, cols);
           if(cur + 1 < nsent &&
              synth_to_file(sent[cur+1], pnext, rate, voice, &synth_pid) == 0){
             synth_i = cur + 1;
@@ -355,8 +409,12 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       }
       if(waitpid(play_pid, NULL, WNOHANG) > 0){
         if(cur + 1 >= nsent){
+          kara_stop();
+          paint_line(pad, sent_row, cur, A_REVERSE);
+          prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
           astate = STOPPED;
         } else {
+          kara_stop();
           int old = cur;
           cur++;
           goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
@@ -365,6 +423,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
             ready = -1;
             if(play_file(pcur, &play_pid) == 0){
               astate = PLAY;
+              kara_begin(pad, sent, sent_row, cur, pcur, rate, top, view_rows, cols);
               if(cur + 1 < nsent &&
                  synth_to_file(sent[cur+1], pnext, rate, voice, &synth_pid) == 0){
                 synth_i = cur + 1;
@@ -383,12 +442,16 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         }
       }
     }
+    if(astate == PLAY)
+      kara_advance(pad, sent_row, cur, top, view_rows, cols);
     if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
   }
 
   delwin(pad);
   if(sbar) delwin(sbar);
   free(sent_row);
+  free(kspan);
+  kspan = NULL;
   free_sentences(sent, nsent);
   cleanup();
   return 0;
@@ -532,6 +595,85 @@ static void goto_line(WINDOW *pad, const int *row, int content_rows,
   prefresh(pad, *top, 0, 0, 0, rows - 1, cols - 1);
 }
 
+static double kara_now(void){
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (double)ts.tv_sec + (double)ts.tv_nsec / 1e9;
+}
+
+static int kara_token_at(double frac){
+  if(knspan <= 0) return -1;
+  if(frac < 0.0) frac = 0.0;
+  if(frac > 1.0) frac = 1.0;
+  double target = frac * (double)ktotal;
+  int acc = 0;
+  for(int i = 0; i < knspan; i++){
+    acc += kspan[i].cells;
+    if((double)acc > target) return i;
+  }
+  return knspan - 1;
+}
+
+static void kara_paint_tok(WINDOW *pad, int base_row, int i, attr_t attr){
+  if(i < 0 || i >= knspan) return;
+  mvwchgat(pad, base_row + kspan[i].row, text_col + kspan[i].col,
+           kspan[i].cells, attr, color_pair, NULL);
+}
+
+static void kara_build(char **sent, int cur){
+  free(kspan);
+  kspan = NULL;
+  knspan = wrap_words(sent[cur], text_width, &kspan);
+  ktotal = 0;
+  for(int i = 0; i < knspan; i++) ktotal += kspan[i].cells;
+  kidx = -1;
+}
+
+static void kara_frame(WINDOW *pad, const int *sent_row, int cur){
+  paint_line(pad, sent_row, cur, A_NORMAL);
+  int w = kara_token_at(kdur > 0.0 ? (kara_now() - kt0) / kdur : 0.0);
+  kidx = w;
+  kara_paint_tok(pad, sent_row[cur], w, A_REVERSE);
+}
+
+static void kara_begin(WINDOW *pad, char **sent, const int *sent_row, int cur,
+                       const char *pfile, int rate, int top, int view_rows,
+                       int cols){
+  kara_build(sent, cur);
+  kdur = audio_duration(pfile);
+  if(kdur <= 0.0)
+    kdur = (double)(knspan > 0 ? knspan : 1) * 60.0 /
+           (double)(rate > 0 ? rate : 180);
+  kt0 = kara_now();
+  kplaying = 1;
+  if(kara_on && knspan > 0){
+    kara_frame(pad, sent_row, cur);
+    prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+  }
+}
+
+static void kara_advance(WINDOW *pad, const int *sent_row, int cur,
+                         int top, int view_rows, int cols){
+  if(!kara_on || !kplaying || knspan <= 0) return;
+  double frac = kdur > 0.0 ? (kara_now() - kt0) / kdur : 1.0;
+  int w = kara_token_at(frac);
+  if(w != kidx){
+    kara_paint_tok(pad, sent_row[cur], kidx, A_NORMAL);
+    kara_paint_tok(pad, sent_row[cur], w, A_REVERSE);
+    kidx = w;
+    prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+  }
+}
+
+static void kara_stop(void){
+  kplaying = 0;
+  free(kspan);
+  kspan = NULL;
+  knspan = 0;
+  ktotal = 0;
+  kidx = -1;
+}
+
 static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
                         int playing, int rate, int words, int cols){
   werase(sbar);
@@ -545,7 +687,7 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   Up/Dn move   +/- speed   f focus   t theme   [ ] width   q quit ";
+  const char *hint = "Space play/pause   Up/Dn move   +/- speed   f focus   w word   t theme   [ ] width   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);

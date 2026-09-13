@@ -55,10 +55,12 @@ week+.
 
 ## Accessibility (rest of the mission)
 
-- [ ] **Word-level highlight (karaoke).** Highlight the spoken word, not the
-      whole sentence — major dyslexia aid, but `say` doesn't expose word
-      timings easily (needs `[[slnc]]`/callbacks or another engine). Big
-      rock. **L**
+- [x] **Word-level highlight (karaoke).** (done 2026-09-13) Each word lights
+      up as it is spoken. `say` exposes no word timings, so the timing is
+      distributed across the sentence's words by length, anchored to the true
+      clip duration from `afinfo`, and re-synced every sentence. Toggle with
+      `w` (on by default). Pure layout in `reflow.c` (`wrap_words`, unit
+      tested); overlay + timing in `ui.c`.
 
 ## Distribution & reach
 
@@ -83,7 +85,7 @@ week+.
 
 ## Big rocks (later)
 
-- [ ] **Word-level highlight** (above).
+- [x] **Word-level highlight** (done 2026-09-13, see Accessibility above).
 - [ ] **In-app paste/read window** — interactive paste-and-read (vs. today's
       `pbpaste | readeasy`). **M–L**
 
@@ -103,3 +105,10 @@ inline.
   a possible polish.
 - **Word count treats a lone em-dash between spaces as a token**, so counts are
   approximate on punctuation-heavy text.
+- **The word highlight is time-estimated, not from real word boundaries.** `say`
+  exposes no word timings, so each word's turn is its share of the sentence's
+  audio duration (from `afinfo`), weighted by length. It re-syncs every
+  sentence, so any drift is bounded to one sentence; long words spoken slowly
+  can still lead or lag slightly. True per-word sync would need a synthesis-API
+  helper (`AVSpeechSynthesizer`), which is deliberately out of scope for a small
+  C tool.

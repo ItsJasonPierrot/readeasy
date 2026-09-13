@@ -103,15 +103,16 @@ to the built-in default.
 
 ## Testing
 
-The pure text logic in `reflow.c` (`build_sentences`, `wrap_sentence`) has
-unit tests. Run them with:
+The pure text logic in `reflow.c` (`build_sentences`, `wrap_sentence`,
+`wrap_words`) has unit tests. Run them with:
 
 ```bash
 make test
 ```
 
-They cover word-boundary wrapping, sentence splitting, and re-flowing of
-hard-wrapped text. Add a case there when you change that logic.
+They cover word-boundary wrapping, sentence splitting, re-flowing of
+hard-wrapped text, and the per-word layout (`wrap_words`) used by the word
+highlight. Add a case there when you change that logic.
 
 The rest of `readeasy` is tested by hand. After making a change, rebuild and
 try a few cases (use any plain-text file, ideally one exported from a PDF so
@@ -146,6 +147,9 @@ Check that:
   starts reading from the cursor sentence, not always from the beginning.
 - While reading, the highlight advances sentence by sentence and the audio
   moves between sentences without a long gap.
+- While reading, each word lights up in turn (word highlight), roughly in time
+  with the voice, re-syncing each sentence; `w` toggles it off and on, and
+  pausing restores the whole-sentence highlight.
 - Pausing with `Space` leaves the cursor on the current sentence; pressing
   `Space` again resumes from that sentence (unless the cursor was moved).
 - The bottom status bar shows the file name, position, percent, word count,

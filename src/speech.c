@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 
 int synth_to_file(const char *text, const char *path, int rate,
@@ -55,4 +57,40 @@ int play_file(const char *path, pid_t *pid){
   }
 
   return 0;
+}
+
+double audio_duration(const char *path){
+  int fds[2];
+  if(pipe(fds) != 0) return -1.0;
+
+  pid_t pid = fork();
+  if(pid < 0){
+    close(fds[0]);
+    close(fds[1]);
+    return -1.0;
+  }
+  if(pid == 0){
+    close(fds[0]);
+    dup2(fds[1], STDOUT_FILENO);
+    close(fds[1]);
+    int dn = open("/dev/null", O_WRONLY);
+    if(dn >= 0){ dup2(dn, STDERR_FILENO); close(dn); }
+    execlp("afinfo", "afinfo", "--", path, (char *)NULL);
+    _exit(127);
+  }
+
+  close(fds[1]);
+  char buf[4096];
+  size_t total = 0;
+  ssize_t n;
+  while(total < sizeof buf - 1 &&
+        (n = read(fds[0], buf + total, sizeof buf - 1 - total)) > 0)
+    total += (size_t)n;
+  close(fds[0]);
+  waitpid(pid, NULL, 0);
+  buf[total] = '\0';
+
+  const char *k = strstr(buf, "estimated duration:");
+  if(k == NULL) return -1.0;
+  return atof(k + 19);
 }

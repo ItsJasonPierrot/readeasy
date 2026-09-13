@@ -7,4 +7,6 @@ int synth_to_file(const char *text, const char *path, int rate,
 
 int play_file(const char *path, pid_t *pid);
 
+double audio_duration(const char *path);
+
 #endif

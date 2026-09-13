@@ -14,6 +14,7 @@ terminal — no browser, no GUI app. Press one key to start or stop the voice.
 
 - Open a text file, a PDF, or piped input in a clean terminal view.
 - Read the text aloud with a single key press.
+- Follow along as each word lights up while it is spoken.
 - Start and stop the speech whenever you like.
 - Tiny, fast, and written in C.
 
@@ -207,6 +208,7 @@ Once the file is open, use these keys:
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
 | `+` / `-` | Speak faster or slower (words per minute). Takes effect as reading continues. |
 | `f` | Toggle **focus mode** — dim everything except the current sentence. |
+| `w` | Toggle **word highlight** — while reading, light up each word as it is spoken (on by default). |
 | `t` | Cycle the color theme. |
 | `[` / `]` | Narrow or widen the centred reading column (`]` past full width turns it off). |
 | `Ctrl-L` | Redraw the screen (useful if it looks stale after switching terminal tabs). |

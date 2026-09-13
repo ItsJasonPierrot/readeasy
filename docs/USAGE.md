@@ -79,6 +79,7 @@ While a file is open, these keys work:
 | `+` | Speak faster (increase words per minute). |
 | `-` | Speak slower (decrease words per minute). |
 | `f` | Toggle focus mode (dim all but the current sentence). |
+| `w` | Toggle word highlight (light up each word as it is spoken; on by default). |
 | `t` | Cycle the color theme (none → blue → cream → contrast → dark). |
 | `[` | Narrow the centred reading column. |
 | `]` | Widen the reading column (past full width turns it off). |
@@ -103,6 +104,16 @@ shows which sentence you are on.
   cursor sentence. (Moving the cursor with `↑` / `↓` while reading pauses
   playback.)
 - Reading stops on its own at the end of the text.
+
+### Word highlight
+
+While a sentence is being read, each word lights up in turn as it is spoken,
+so your eye can follow along — a reading aid especially for dyslexic and ADHD
+readers. The timing is derived from the length of the synthesized audio, so it
+tracks the voice closely; it re-syncs at the start of every sentence. Press
+`w` to turn the word highlight off (leaving the whole sentence highlighted) or
+back on; it is on by default. When you pause, the whole current sentence is
+highlighted again so you can see where you are.
 
 ### The status bar
 

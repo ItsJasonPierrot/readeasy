@@ -197,3 +197,49 @@ char *wrap_sentence(const char *s, int cols){
   out[len] = '\0';
   return out;
 }
+
+int wrap_words(const char *s, int cols, word_span **out){
+  *out = NULL;
+
+  char *w = wrap_sentence(s, cols);
+  if(w == NULL) return 0;
+
+  word_span *arr = NULL;
+  int cap = 0, n = 0;
+  int row = 0, col = 0;
+  int in = 0, tstart = 0, tcells = 0;
+
+  for(const char *p = w; ; ){
+    unsigned char c = (unsigned char)*p;
+    if(c == '\0' || c == '\n' || c == ' '){
+      if(in){
+        if(n == cap){
+          int nc = cap ? cap * 2 : 16;
+          word_span *na = realloc(arr, (size_t)nc * sizeof(word_span));
+          if(na == NULL){ free(arr); free(w); return 0; }
+          arr = na;
+          cap = nc;
+        }
+        arr[n].row = row;
+        arr[n].col = tstart;
+        arr[n].cells = tcells;
+        n++;
+        in = 0;
+      }
+      if(c == '\0') break;
+      if(c == '\n'){ row++; col = 0; }
+      else col++;
+      p++;
+    } else {
+      if(!in){ in = 1; tstart = col; tcells = 0; }
+      p++;
+      while(((unsigned char)*p & 0xC0) == 0x80) p++;
+      col++;
+      tcells++;
+    }
+  }
+
+  free(w);
+  *out = arr;
+  return n;
+}

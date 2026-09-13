@@ -119,10 +119,45 @@ static void test_reflow(void){
   free_sentences(s, n);
 }
 
+static void test_words(void){
+  word_span *w;
+  int n;
+
+  n = wrap_words("the quick brown fox", 40, &w);
+  ok("words: four tokens on one line", n == 4);
+  ok("words: 'the' at row0 col0 cells3",
+     n == 4 && w[0].row == 0 && w[0].col == 0 && w[0].cells == 3);
+  ok("words: 'quick' at row0 col4 cells5",
+     n == 4 && w[1].row == 0 && w[1].col == 4 && w[1].cells == 5);
+  ok("words: 'fox' at row0 col16 cells3",
+     n == 4 && w[3].row == 0 && w[3].col == 16 && w[3].cells == 3);
+  free(w);
+
+  n = wrap_words("alpha beta gamma delta", 11, &w);
+  ok("words: still four tokens when wrapped", n == 4);
+  ok("words: wrap advances to a later row",
+     n == 4 && w[n-1].row > 0);
+  int okcol = 1;
+  for(int i = 0; i < n; i++)
+    if(w[i].col < 0 || w[i].col + w[i].cells > 11) okcol = 0;
+  ok("words: every token fits within the column", okcol);
+  free(w);
+
+  n = wrap_words("cafe naive resume", 40, &w);
+  ok("words: utf-8-ish tokens counted by display width",
+     n == 3 && w[0].cells == 4 && w[1].cells == 5 && w[2].cells == 6);
+  free(w);
+
+  n = wrap_words("   ", 20, &w);
+  ok("words: whitespace-only yields no tokens", n == 0);
+  free(w);
+}
+
 int main(void){
   test_wrap();
   test_split();
   test_reflow();
+  test_words();
   printf("\n%d passed, %d failed\n", pass, fail);
   return fail != 0;
 }
