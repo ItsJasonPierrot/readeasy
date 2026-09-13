@@ -47,6 +47,16 @@ where it runs.
 
       Add reflow unit tests for each case. Directly serves the reading-quality
       mission. **M**
+- [ ] ★ **Handle man-page overstrike (so `man x | readeasy` just works).**
+      Piping a man page in without `col -b` reads as garbage: man/nroff output
+      renders bold as `c\bc` and underline as `_\bc` (backspace overstrike), and
+      `input.c` replaces every `\b` (0x08) with a space — so "NAME" becomes
+      "N NA AM ME E" and "file" becomes "_ f_ i_ l_ e". Fix in `input.c`, before
+      the control-char replacement: collapse backspace overstrike — on each `\b`,
+      drop the previous output character and keep the overprinting one, so
+      `c\bc` → `c` and `_\bc` → `c` (stacking too, `c\bc\bc` → `c`). Then drop the
+      `col -b` step from the docs' man-page example. Applies to all input; small
+      and self-contained. **S**
 - [ ] **Navigation.**
   - [ ] **Search (`/`).** Type to find; jump the cursor to the next match. **M**
   - [ ] **Outline / jump by heading.** Short lines are already kept as their own
