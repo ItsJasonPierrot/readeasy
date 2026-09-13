@@ -183,6 +183,7 @@ pdftotext paper.pdf - | readeasy      # the manual version of readeasy paper.pdf
 | `--focus` | Start in focus mode (dim all but the current sentence; toggle with `f`). |
 | `--theme NAME` | Color theme: `none` (default), `blue`, `cream` (dyslexia-friendly dark-on-cream), `contrast` (white-on-black), `dark`. Cycle live with `t`. |
 | `--color` | Shorthand for `--theme blue`. |
+| `--no-word-highlight` | Don't light up each word while reading (word highlight is on by default; toggle live with `w`). |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
 
@@ -206,7 +207,7 @@ Once the file is open, use these keys:
 | `PgUp` / `PgDn` | Move up or down about one screenful. |
 | `Home` / `End` (or `g` / `G`) | Jump to the first or last sentence. |
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
-| `+` / `-` | Speak faster or slower (words per minute). Takes effect as reading continues. |
+| `+` / `-` | Speak faster or slower (words per minute). If you are reading, the current sentence restarts at the new speed. |
 | `f` | Toggle **focus mode** — dim everything except the current sentence. |
 | `w` | Toggle **word highlight** — while reading, light up each word as it is spoken (on by default). |
 | `t` | Cycle the color theme. |

@@ -13,6 +13,7 @@ typedef struct {
   int theme;
   int focus;
   int width;
+  int word_highlight;
 } ui_opts;
 
 int run_ui(char *text, const char *name, const ui_opts *opts);

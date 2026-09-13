@@ -72,6 +72,8 @@ static void load_config(ui_opts *opts){
       if(idx >= 0) opts->theme = idx;
     } else if(!strcmp(key, "focus")){
       opts->focus = parse_bool(val);
+    } else if(!strcmp(key, "word_highlight")){
+      opts->word_highlight = parse_bool(val);
     }
   }
 
@@ -92,6 +94,7 @@ static void usage(FILE *f){
 "      --focus      dim everything except the current sentence\n"
 "      --theme NAME color theme: none, blue, cream, contrast, dark (default none)\n"
 "      --color      shorthand for --theme blue\n"
+"      --no-word-highlight  do not light up each word while reading\n"
 "  -v, --version    print version and exit\n"
 "  -h, --help       print this help and exit\n"
 "\n"
@@ -102,7 +105,7 @@ int main(int argc, char *argv[]){
   char *buffer;
   int input_text = STDIN_FILENO;
   ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .theme = 0,
-                   .focus = 0, .width = 0 };
+                   .focus = 0, .width = 0, .word_highlight = 1 };
 
   load_config(&opts);
 
@@ -114,6 +117,8 @@ int main(int argc, char *argv[]){
     {"focus",    no_argument,       0, 'F'},
     {"color",    no_argument,       0, 'C'},
     {"no-color", no_argument,       0, 'N'},
+    {"word-highlight",    no_argument, 0, 'W'},
+    {"no-word-highlight", no_argument, 0, 'D'},
     {"version",  no_argument,       0, 'v'},
     {"help",     no_argument,       0, 'h'},
     {0, 0, 0, 0}
@@ -162,6 +167,8 @@ int main(int argc, char *argv[]){
       case 'F': opts.focus = 1;                   break;
       case 'C': opts.theme = ui_theme_index("blue"); break;
       case 'N': opts.theme = 0;                   break;
+      case 'W': opts.word_highlight = 1;          break;
+      case 'D': opts.word_highlight = 0;          break;
       case 'v': printf("readeasy %s\n", READEASY_VERSION); return 0;
       case 'h': usage(stdout);            return 0;
       default:  usage(stderr);            return 1;

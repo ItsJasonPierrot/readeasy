@@ -58,9 +58,10 @@ week+.
 - [x] **Word-level highlight (karaoke).** (done 2026-09-13) Each word lights
       up as it is spoken. `say` exposes no word timings, so the timing is
       distributed across the sentence's words by length, anchored to the true
-      clip duration from `afinfo`, and re-synced every sentence. Toggle with
-      `w` (on by default). Pure layout in `reflow.c` (`wrap_words`, unit
-      tested); overlay + timing in `ui.c`.
+      clip duration from `afinfo`, and re-synced every sentence. On by default;
+      toggle with `w`, or start it off with `--no-word-highlight` /
+      `word_highlight off` in the config. Pure layout in `reflow.c`
+      (`wrap_words`, unit tested); overlay + timing in `ui.c`.
 
 ## Distribution & reach
 
@@ -86,8 +87,12 @@ week+.
 ## Big rocks (later)
 
 - [x] **Word-level highlight** (done 2026-09-13, see Accessibility above).
-- [ ] **In-app paste/read window** — interactive paste-and-read (vs. today's
-      `pbpaste | readeasy`). **M–L**
+
+## Not planned
+
+- **In-app paste/read window.** (declined 2026-09-13) An interactive
+  paste-and-read mode was considered and dropped — `pbpaste | readeasy` already
+  covers it, and a built-in paste UI isn't worth the surface area.
 
 ---
 
@@ -100,9 +105,6 @@ inline.
   common pragmatic tradeoff for restoring the terminal on exit. Deliberate.
 - **`wrap_sentence` counts codepoints, not display columns** — double-width CJK
   characters throw the wrap off by a column. Edge case for this audience.
-- **Speed changes apply to the next sentence** (one-sentence prefetch), not the
-  one currently playing. A `+`/`-` that re-synthesizes the current sentence is
-  a possible polish.
 - **Word count treats a lone em-dash between spaces as a token**, so counts are
   approximate on punctuation-heavy text.
 - **The word highlight is time-estimated, not from real word boundaries.** `say`

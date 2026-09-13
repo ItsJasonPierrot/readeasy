@@ -135,6 +135,8 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   const char *voice = opts->voice;
   char *pcur = audio_a, *pnext = audio_b, *pswap;
 
+  kara_on = opts->word_highlight ? 1 : 0;
+
   if(rate < RATE_MIN) rate = RATE_MIN;
   if(rate > RATE_MAX) rate = RATE_MAX;
   normal_attr = focus ? A_DIM : A_NORMAL;
@@ -305,13 +307,28 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       break;
     }
 
-    if(character == '+' || character == '='){
-      rate += RATE_STEP;
-      if(rate > RATE_MAX) rate = RATE_MAX;
-    }
-    if(character == '-' || character == '_'){
-      rate -= RATE_STEP;
-      if(rate < RATE_MIN) rate = RATE_MIN;
+    if(character == '+' || character == '=' ||
+       character == '-' || character == '_'){
+      int old_rate = rate;
+      if(character == '+' || character == '='){
+        rate += RATE_STEP;
+        if(rate > RATE_MAX) rate = RATE_MAX;
+      } else {
+        rate -= RATE_STEP;
+        if(rate < RATE_MIN) rate = RATE_MIN;
+      }
+      if(rate != old_rate && astate != STOPPED && nsent > 0 && audio_ok){
+        stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+        kara_stop();
+        if(synth_to_file(sent[cur], pcur, rate, voice, &synth_pid) == 0){
+          synth_i = cur;
+          astate = SYNTH;
+        } else {
+          astate = STOPPED;
+          paint_line(pad, sent_row, cur, A_REVERSE);
+          prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+        }
+      }
     }
 
     if(character == 'f'){

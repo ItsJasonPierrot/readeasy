@@ -55,6 +55,7 @@ error.
 | `--focus` | Start in focus mode (dim everything except the current sentence). Toggle at any time with `f`. |
 | `--theme NAME` | Color theme, one of: `none`, `blue`, `cream`, `contrast`, `dark` (default `none`). `cream` is a low-contrast dark-on-cream palette meant to be dyslexia-friendly; `contrast` is white-on-black. Cycle live with `t`. |
 | `--color` | Shorthand for `--theme blue`. (`--no-color` is also accepted and is the default.) |
+| `--no-word-highlight` | Do not light up each word while reading (leave the whole sentence highlighted). Word highlight is on by default; `--word-highlight` forces it on, overriding the config file. Toggle live with `w`. |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
 
@@ -76,8 +77,8 @@ While a file is open, these keys work:
 | `Home` / `g` | Jump to the first sentence. |
 | `End` / `G` | Jump to the last sentence. |
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
-| `+` | Speak faster (increase words per minute). |
-| `-` | Speak slower (decrease words per minute). |
+| `+` | Speak faster (increase words per minute). If reading, the current sentence restarts at the new speed. |
+| `-` | Speak slower (decrease words per minute). If reading, the current sentence restarts at the new speed. |
 | `f` | Toggle focus mode (dim all but the current sentence). |
 | `w` | Toggle word highlight (light up each word as it is spoken; on by default). |
 | `t` | Cycle the color theme (none → blue → cream → contrast → dark). |
@@ -249,6 +250,7 @@ Recognised keys:
 | `voice` | Voice name (as in `say -v '?'`). |
 | `theme` | `none`, `blue`, `cream`, `contrast`, or `dark`. |
 | `focus` | `on` or `off`. |
+| `word_highlight` | `on` or `off` (light up each word while reading; on by default). |
 
 Example `~/.config/readeasy/config`:
 
@@ -257,6 +259,7 @@ rate 200
 theme cream
 width 66
 focus on
+word_highlight on
 ```
 
 Unrecognised keys and invalid values are ignored, so a small typo won't stop
