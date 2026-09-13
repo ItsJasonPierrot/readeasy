@@ -15,12 +15,12 @@ readeasy/
 ├── src/            C source files
 │   ├── main.c      Program entry point and argument handling
 │   ├── input.c     Reads the file, a PDF (via pdftotext), or piped input
-│   ├── reflow.c    Re-flows text and splits it into sentences
-│   ├── speech.c    Synthesizes (say) and plays (afplay) sentence audio
+│   ├── reflow.c    Re-flows text, splits sentences, maps words for highlight
+│   ├── speech.c    Synthesizes (say), plays (afplay), times (afinfo) audio
 │   └── ui.c        Terminal interface, keyboard controls, playback (ncurses)
 ├── include/        Header files (.h) for each source module
 ├── docs/           Documentation
-├── tests/          Sample text files used for manual testing
+├── tests/          Unit tests (test_reflow.c), run with `make test`
 ├── Makefile        Build instructions
 └── README.md       Overview and quick start
 ```
@@ -165,7 +165,10 @@ Check that:
   with a blank line between sentences; it recentres on resize and `]` past
   full width returns to full-width layout.
 - `+` / `-` change the speaking speed (shown as `wpm` in the status bar),
-  clamped between 80 and 400.
+  clamped between 80 and 400. Changing speed while reading restarts the current
+  sentence at the new speed (you hear it again from the start).
+- `w` toggles the word highlight off and on while reading; `--no-word-highlight`
+  (or `word_highlight off` in the config) starts with it off.
 - Resizing the terminal re-flows the text to the new width (status bar stays
   at the bottom).
 - `q` quits cleanly, and `Ctrl-C` while playing also exits cleanly —
@@ -194,19 +197,23 @@ Keep the style consistent with the existing code:
 
 ## Adding Linux speech support
 
-Speech currently uses the macOS-only `say` and `afplay` commands in
-`src/speech.c`: `synth_to_file()` writes a sentence to an audio file with
-`say -o`, and `play_file()` plays it with `afplay`:
+Speech currently uses the macOS-only `say`, `afplay`, and `afinfo` commands in
+`src/speech.c`, run with `fork` + `exec` (never a shell):
 
-```c
-execlp("say", "say", "-o", path, text, (char *)NULL);   /* synth_to_file */
-execlp("afplay", "afplay", path, (char *)NULL);          /* play_file */
-```
+- `synth_to_file()` writes a sentence to an audio file with
+  `say -r RATE [-v VOICE] -o PATH -- TEXT`. The `--` marks the end of options so
+  a sentence starting with `-` can never be read as a flag.
+- `play_file()` plays that file with `afplay`.
+- `audio_duration()` reads the clip's length with `afinfo`, which the word
+  highlight uses to pace itself; without it, the highlight falls back to a
+  rate-based estimate.
 
 To support Linux, you would detect the platform (or add a build option) and use
-Linux tools instead — for example synthesizing with `espeak -w file.wav` and
-playing with `aplay`, or having a single tool both synthesize and play. Keep
-the synth/play split so the next-sentence prefetch in `ui.c` still works.
+Linux tools instead — for example synthesizing with `espeak -w file.wav`,
+playing with `aplay`, and reading the duration with `soxi -D` (or estimating
+from the rate). Keep the synth/play split so the next-sentence prefetch in
+`ui.c` still works, and keep passing untrusted text after a `--` (or otherwise
+never as an option).
 
 If you take this on, please keep macOS working and document any new dependency.
 
