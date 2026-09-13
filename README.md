@@ -1,5 +1,7 @@
 # readeasy
 
+[![CI](https://github.com/ItsJasonPierrot/readeasy/actions/workflows/ci.yml/badge.svg)](https://github.com/ItsJasonPierrot/readeasy/actions/workflows/ci.yml)
+
 **Read any text file out loud, right from your terminal.**
 
 `readeasy` is a small command-line tool that opens a text file in a simple
@@ -57,6 +59,25 @@ character.
 ---
 
 ## Installation
+
+### The easy way — Homebrew (macOS)
+
+If you have [Homebrew](https://brew.sh), this is one command. It pulls in
+wide-character ncurses for you and puts `readeasy` on your `PATH`:
+
+```bash
+brew install itsjasonpierrot/tap/readeasy
+```
+
+Update it later the same way you update anything else:
+
+```bash
+brew upgrade readeasy
+```
+
+Then skip straight to [Usage](#usage).
+
+### From source
 
 **1. Clone the repository**
 

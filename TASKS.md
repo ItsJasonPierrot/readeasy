@@ -62,9 +62,10 @@ week+.
 
 ## Distribution & reach
 
-- [ ] ★ **Homebrew tap** (`brew install itsjasonpierrot/tap/readeasy`).
-      Handles ncurses automatically — the one command a non-technical Mac user
-      can follow. Biggest reach-multiplier. **M**
+- [x] ★ **Homebrew tap** (`brew install itsjasonpierrot/tap/readeasy`).
+      (done 2026-09-13) Formula lives in the `homebrew-tap` repo, builds from
+      the tagged release, and pulls in ncurses automatically — the one command
+      a non-technical Mac user can follow.
 - [ ] **Native `readeasy file.pdf`.** Auto-run `pdftotext file.pdf -` for a
       `.pdf` argument. (Spun-off task exists.) **S**
 - [ ] **Linux speech backend.** Abstract `speech.c` to also use `espeak-ng` /
@@ -72,8 +73,9 @@ week+.
 
 ## Dev hygiene
 
-- [ ] **CI (GitHub Actions).** Build on macOS with `-Werror`; a `debug` target
-      with `-fsanitize=address,undefined`. **M**
+- [x] **CI (GitHub Actions).** (done 2026-09-13) `.github/workflows/ci.yml`
+      builds on macOS with `-Werror` (via `make EXTRA_CFLAGS`) and runs
+      `make test` both normally and under `-fsanitize=address,undefined`.
 - [x] **Version from git tags.** (done 2026-09-10) `make` stamps the version
       from `git describe --tags --always --dirty` via `-DREADEASY_VERSION` (on
       `src/main.o` only); falls back to the built-in default outside git.

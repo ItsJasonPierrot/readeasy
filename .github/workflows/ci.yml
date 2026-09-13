@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build:
+    name: Build and test (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install wide-character ncurses
+        run: brew install ncurses
+
+      - name: Build with warnings as errors
+        run: make EXTRA_CFLAGS=-Werror
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Run unit tests under AddressSanitizer and UBSan
+        env:
+          UBSAN_OPTIONS: halt_on_error=1
+          ASAN_OPTIONS: detect_leaks=0
+        run: make test EXTRA_CFLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g"

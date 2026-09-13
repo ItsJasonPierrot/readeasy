@@ -14,6 +14,8 @@ else
   LDLIBS := -lncursesw
 endif
 
+CFLAGS += $(EXTRA_CFLAGS)
+
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null)
 
 SRC = src/main.c src/input.c src/speech.c src/ui.c src/reflow.c
@@ -40,6 +42,6 @@ uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/readeasy
 
 clean:
-	rm -f $(OBJ) readeasy tests/test_reflow
+	rm -rf $(OBJ) readeasy tests/test_reflow tests/test_reflow.dSYM
 
 .PHONY: test install uninstall clean
