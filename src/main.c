@@ -8,7 +8,7 @@
 #include "ui.h"
 
 #ifndef READEASY_VERSION
-#define READEASY_VERSION "1.1.2"
+#define READEASY_VERSION "1.2.0"
 #endif
 
 static int parse_bool(const char *s){
