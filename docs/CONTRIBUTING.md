@@ -14,7 +14,7 @@ By taking part, you agree to follow our
 readeasy/
 ├── src/            C source files
 │   ├── main.c      Program entry point and argument handling
-│   ├── input.c     Reads the file or piped input into a buffer
+│   ├── input.c     Reads the file, a PDF (via pdftotext), or piped input
 │   ├── reflow.c    Re-flows text and splits it into sentences
 │   ├── speech.c    Synthesizes (say) and plays (afplay) sentence audio
 │   └── ui.c        Terminal interface, keyboard controls, playback (ncurses)
@@ -121,6 +121,7 @@ accented characters and hard-wrapped lines):
 ```bash
 make
 ./readeasy somefile.txt              # a normal file
+./readeasy somefile.pdf              # a PDF (converted with pdftotext)
 printf '' > empty.txt; ./readeasy empty.txt   # should say "File is empty"
 ./readeasy /no/such/file             # should say "File not found."
 echo "hello world" | ./readeasy      # piped input
@@ -136,6 +137,10 @@ Check that:
   is reachable, not truncated.
 - Piped input (`… | ./readeasy`) is still controllable — `Space`/`q` work,
   because the controls fall back to `/dev/tty`.
+- A `.pdf` file (any case) is converted with `pdftotext` and reads like a text
+  file. With `pdftotext` off the `PATH`, `readeasy file.pdf` prints a short
+  "install poppler" note; a `.pdf` that isn't really a PDF prints "could not
+  read PDF"; a valid PDF with no text layer (a scan) says so.
 - `↑` / `↓` move the highlighted cursor sentence; `PgUp` / `PgDn` move about a
   screenful; `Home`/`End` (or `g`/`G`) jump to the first/last sentence. `Space`
   starts reading from the cursor sentence, not always from the beginning.

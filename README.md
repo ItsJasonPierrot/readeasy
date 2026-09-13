@@ -12,7 +12,7 @@ terminal — no browser, no GUI app. Press one key to start or stop the voice.
 
 ## Features
 
-- Open a text file (or piped input) in a clean terminal view.
+- Open a text file, a PDF, or piped input in a clean terminal view.
 - Read the text aloud with a single key press.
 - Start and stop the speech whenever you like.
 - Tiny, fast, and written in C.
@@ -146,19 +146,31 @@ cat notes.txt | ./readeasy
 > If you installed it globally (step 4 above), drop the `./` and just run
 > `readeasy <filename>` from any folder.
 
-### Reading man pages, PDFs, and the clipboard
+### Reading PDFs
+
+Give `readeasy` a `.pdf` file and it converts it to text for you:
+
+```bash
+readeasy paper.pdf
+```
+
+This uses `pdftotext` from [poppler](https://poppler.freedesktop.org). Install
+it once with `brew install poppler` (if you installed `readeasy` with Homebrew,
+you can add it with `brew install poppler`); `readeasy` will remind you if it's
+missing.
+
+### Reading man pages and the clipboard
 
 `readeasy` reads plain text, so anything you can turn into text on the command
 line can be piped in:
 
 ```bash
 man ls | col -b | readeasy            # a man page (col -b strips formatting)
-pdftotext paper.pdf - | readeasy      # a PDF (needs poppler's pdftotext)
 pbpaste | readeasy                    # whatever you've copied (macOS clipboard)
+pdftotext paper.pdf - | readeasy      # the manual version of readeasy paper.pdf
 ```
 
-`pdftotext` comes from [poppler](https://poppler.freedesktop.org)
-(`brew install poppler`). `col` and `pbpaste` are built into macOS.
+`col` and `pbpaste` are built into macOS.
 
 ### Options
 
@@ -176,7 +188,7 @@ pbpaste | readeasy                    # whatever you've copied (macOS clipboard)
 For example, read a PDF slowly in a chosen voice:
 
 ```bash
-pdftotext paper.pdf - | readeasy --rate 140 --voice Daniel
+readeasy --rate 140 --voice Daniel paper.pdf
 ```
 
 To avoid retyping options, put defaults in `~/.config/readeasy/config` (one

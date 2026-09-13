@@ -202,11 +202,18 @@ Read a man page's plain text:
 man ls | col -b | ./readeasy
 ```
 
-Read a PDF (via poppler's `pdftotext`) or the macOS clipboard:
+Read a PDF — just pass the `.pdf` file and `readeasy` converts it for you
+(this needs poppler's `pdftotext`; install it with `brew install poppler`):
 
 ```bash
-pdftotext paper.pdf - | ./readeasy
+./readeasy paper.pdf
+```
+
+Read the macOS clipboard, or extract a PDF yourself and pipe it in:
+
+```bash
 pbpaste | ./readeasy
+pdftotext paper.pdf - | ./readeasy      # the manual equivalent
 ```
 
 If `readeasy` is installed globally (`make install`), drop the `./` and run

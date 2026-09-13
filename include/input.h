@@ -4,5 +4,6 @@
 #define BUFFER_SIZE 65536
 
 int process_buffer(int input_text, char **out);
+int read_pdf(const char *path, char **out);
 
 #endif

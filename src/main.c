@@ -16,6 +16,16 @@ static int parse_bool(const char *s){
           !strcmp(s, "yes") || !strcmp(s, "1"));
 }
 
+static int has_pdf_extension(const char *name){
+  size_t n = strlen(name);
+  if(n < 4) return 0;
+  const char *e = name + n - 4;
+  return e[0] == '.' &&
+         (e[1] == 'p' || e[1] == 'P') &&
+         (e[2] == 'd' || e[2] == 'D') &&
+         (e[3] == 'f' || e[3] == 'F');
+}
+
 static void load_config(ui_opts *opts){
   static char voice_store[128];
   char path[512];
@@ -72,7 +82,8 @@ static void usage(FILE *f){
   fputs(
 "Usage: readeasy [options] [file]\n"
 "\n"
-"Read a text file aloud in the terminal. With no file, reads piped input.\n"
+"Read a text file aloud in the terminal. A .pdf file is converted with\n"
+"pdftotext (from poppler) automatically. With no file, reads piped input.\n"
 "\n"
 "Options:\n"
 "  -r, --rate N     starting speed in words per minute (80-400, default 180)\n"
@@ -169,20 +180,25 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
-  if(file != NULL){
-    input_text = open(file, O_RDONLY);
-    if(input_text < 0){
-      write(STDERR_FILENO, "File not found.\n", 16);
+  if(file != NULL && has_pdf_extension(file)){
+    if(read_pdf(file, &buffer) != 0)
+      return 1;
+  } else {
+    if(file != NULL){
+      input_text = open(file, O_RDONLY);
+      if(input_text < 0){
+        write(STDERR_FILENO, "File not found.\n", 16);
+        return 1;
+      }
+    }
+
+    if(process_buffer(input_text, &buffer) != 0){
+      if(file != NULL) close(input_text);
       return 1;
     }
-  }
 
-  if(process_buffer(input_text, &buffer) != 0){
     if(file != NULL) close(input_text);
-    return 1;
   }
-
-  if(file != NULL) close(input_text);
 
   if(!isatty(STDIN_FILENO)){
     if(freopen("/dev/tty", "r", stdin) == NULL){

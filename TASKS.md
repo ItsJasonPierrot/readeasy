@@ -66,8 +66,9 @@ week+.
       (done 2026-09-13) Formula lives in the `homebrew-tap` repo, builds from
       the tagged release, and pulls in ncurses automatically — the one command
       a non-technical Mac user can follow.
-- [ ] **Native `readeasy file.pdf`.** Auto-run `pdftotext file.pdf -` for a
-      `.pdf` argument. (Spun-off task exists.) **S**
+- [x] **Native `readeasy file.pdf`.** (done 2026-09-13) A `.pdf` argument (any
+      case) is converted with `pdftotext file.pdf -`; missing `pdftotext`,
+      non-PDF files, and text-less scans each get a clear message.
 - [ ] **Linux speech backend.** Abstract `speech.c` to also use `espeak-ng` /
       `spd-say` / Piper. ~doubles the audience. **L**
 
