@@ -322,12 +322,9 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       apply_theme(theme_idx);
       wbkgd(stdscr, COLOR_PAIR(color_pair));
       if(sbar) wbkgd(sbar, COLOR_PAIR(color_pair) | A_REVERSE);
+      wbkgd(pad, COLOR_PAIR(color_pair));
+      if(nsent > 0) apply_base(pad, sent_row, nsent);
       clearok(curscr, TRUE);
-      if(nsent > 0){
-        WINDOW *np = build_pad(sent, nsent, rows, cols, sent_row, &content_rows);
-        if(np != NULL){ delwin(pad); pad = np; }
-        if(focus) apply_base(pad, sent_row, nsent);
-      }
       touchwin(stdscr);
       refresh();
       if(nsent > 0)
@@ -447,6 +444,8 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
       if(rem == 0) row++;
       while(rem > 0){
         int len = rem > text_width ? text_width : rem;
+        if(len < rem)
+          while(len > 1 && ((unsigned char)b[len] & 0xC0) == 0x80) len--;
         mvwaddnstr(pad, row, text_col, b, len);
         row++;
         b += len;
@@ -546,7 +545,7 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   Up/Dn move   +/- speed   f focus   q quit ";
+  const char *hint = "Space play/pause   Up/Dn move   +/- speed   f focus   t theme   [ ] width   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);
