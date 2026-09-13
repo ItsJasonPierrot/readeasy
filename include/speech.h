@@ -9,4 +9,7 @@ int play_file(const char *path, pid_t *pid);
 
 double audio_duration(const char *path);
 
+char **list_voices(int *n);
+void free_voices(char **voices, int n);
+
 #endif

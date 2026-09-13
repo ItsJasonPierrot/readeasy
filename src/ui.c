@@ -9,6 +9,7 @@
 #include "speech.h"
 #include "reflow.h"
 #include "ui.h"
+#include "config.h"
 
 enum { STOPPED, SYNTH, PLAY };
 
@@ -113,6 +114,11 @@ static void kara_begin(WINDOW *pad, char **sent, const int *sent_row, int cur,
 static void kara_advance(WINDOW *pad, const int *sent_row, int cur,
                          int top, int view_rows, int cols);
 static void kara_stop(void);
+static void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
+                          int theme_idx, int focus, int word_on,
+                          const char *voice, int saved);
+static int list_picker(int rows, int cols, const char *title,
+                       char **items, int n, int start);
 
 int run_ui(char *text, const char *name, const ui_opts *opts){
   int rows, cols, view_rows, has_status;
@@ -124,6 +130,10 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   int *sent_row = NULL;
   char **sent;
   WINDOW *pad, *sbar = NULL;
+
+  int menu_open = 0, menu_sel = 0, menu_saved = 0, vsel = -1, nvoices = 0;
+  WINDOW *menu_win = NULL;
+  char **voices = NULL;
 
   int astate = STOPPED;
   int synth_i = -1;
@@ -223,6 +233,134 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   while(1){
     timeout(astate == STOPPED ? -1 : 100);
     character = getch();
+
+    if(menu_open){
+      int repaint_pad = 0, dir = 0;
+
+      if(character == KEY_UP || character == 'k')        menu_sel = (menu_sel + 6) % 7;
+      else if(character == KEY_DOWN || character == 'j') menu_sel = (menu_sel + 1) % 7;
+      else if(character == KEY_LEFT  || character == 'h') dir = -1;
+      else if(character == KEY_RIGHT || character == 'l') dir = 1;
+      else if(character == 's' || character == 'S'){
+        ui_opts co = { .rate = rate, .voice = voice, .theme = theme_idx,
+                       .focus = focus, .width = width, .word_highlight = kara_on };
+        menu_saved = (config_save(&co) == 0) ? 1 : -1;
+      }
+      else if(character == '\n' || character == '\r' || character == KEY_ENTER){
+        if(menu_sel == 6){
+          ui_opts co = { .rate = rate, .voice = voice, .theme = theme_idx,
+                         .focus = focus, .width = width, .word_highlight = kara_on };
+          menu_saved = (config_save(&co) == 0) ? 1 : -1;
+        } else if(menu_sel == 5){
+          int pn = nvoices + 1;
+          char **items = malloc((size_t)pn * sizeof(char *));
+          if(items != NULL){
+            items[0] = (char *)"(system default)";
+            for(int i = 0; i < nvoices; i++) items[i+1] = voices[i];
+            int chosen = list_picker(rows, cols, "Choose a voice", items, pn, vsel + 1);
+            free(items);
+            if(chosen >= 0){
+              vsel = chosen - 1;
+              voice = (vsel >= 0) ? voices[vsel] : NULL;
+            }
+            menu_saved = 0;
+            clearok(curscr, TRUE);
+            touchwin(stdscr);
+            refresh();
+            repaint_pad = 1;
+          }
+        } else dir = 1;
+      }
+      else if(character == 27 || character == ','){
+        delwin(menu_win);
+        menu_win = NULL;
+        menu_open = 0;
+        clearok(curscr, TRUE);
+        touchwin(stdscr);
+        refresh();
+        if(focus && nsent > 0) apply_base(pad, sent_row, nsent);
+        if(nsent > 0)
+          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+        else
+          prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
+        if(sbar) draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
+        continue;
+      }
+
+      if(dir != 0){
+        menu_saved = 0;
+        switch(menu_sel){
+          case 0:
+            theme_idx = (theme_idx + dir + n_themes) % n_themes;
+            apply_theme(theme_idx);
+            wbkgd(stdscr, COLOR_PAIR(color_pair));
+            if(sbar) wbkgd(sbar, COLOR_PAIR(color_pair) | A_REVERSE);
+            wbkgd(pad, COLOR_PAIR(color_pair));
+            wbkgd(menu_win, COLOR_PAIR(color_pair));
+            if(nsent > 0) apply_base(pad, sent_row, nsent);
+            clearok(curscr, TRUE);
+            touchwin(stdscr);
+            refresh();
+            repaint_pad = 1;
+            break;
+          case 1:
+            rate += dir * RATE_STEP;
+            if(rate > RATE_MAX) rate = RATE_MAX;
+            if(rate < RATE_MIN) rate = RATE_MIN;
+            break;
+          case 2:
+            if(dir < 0){
+              if(width <= 0 || width > cols) width = cols;
+              width -= WIDTH_STEP;
+              if(width < WIDTH_MIN) width = WIDTH_MIN;
+            } else if(width > 0){
+              width += WIDTH_STEP;
+              if(width >= cols) width = 0;
+            }
+            set_layout(width, cols);
+            {
+              int off = (nsent > 0) ? sent_row[cur] - top : 0;
+              WINDOW *np = build_pad(sent, nsent, rows, cols, sent_row, &content_rows);
+              if(np != NULL){
+                delwin(pad);
+                pad = np;
+                if(nsent > 0) top = sent_row[cur] - off;
+              }
+            }
+            if(focus && nsent > 0) apply_base(pad, sent_row, nsent);
+            repaint_pad = 1;
+            break;
+          case 3:
+            focus = !focus;
+            normal_attr = focus ? A_DIM : A_NORMAL;
+            if(nsent > 0) apply_base(pad, sent_row, nsent);
+            repaint_pad = 1;
+            break;
+          case 4:
+            kara_on = !kara_on;
+            break;
+          case 5:
+            if(nvoices > 0){
+              int total = nvoices + 1;
+              int p = (((vsel + 1 + dir) % total) + total) % total;
+              vsel = p - 1;
+              voice = (vsel >= 0) ? voices[vsel] : NULL;
+            }
+            break;
+        }
+      }
+
+      if(repaint_pad){
+        if(nsent > 0)
+          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+        else
+          prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
+      }
+      if(menu_win)
+        draw_settings(menu_win, menu_sel, rate, width, cols, theme_idx, focus,
+                      kara_on, voice, menu_saved);
+      continue;
+    }
 
     if(character == KEY_RESIZE || character == 12){
       getmaxyx(stdscr, rows, cols);
@@ -404,6 +542,43 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       }
     }
 
+    if(character == ','){
+      if(astate != STOPPED){
+        stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+        kara_stop();
+        astate = STOPPED;
+      }
+      if(voices == NULL) voices = list_voices(&nvoices);
+      vsel = -1;
+      if(voice != NULL)
+        for(int i = 0; i < nvoices; i++)
+          if(strcmp(voice, voices[i]) == 0){ vsel = i; break; }
+
+      int menu_h = 14, menu_w = 54;
+      if(menu_h > rows) menu_h = rows;
+      if(menu_w > cols) menu_w = cols;
+      int my = (rows - menu_h) / 2, mx = (cols - menu_w) / 2;
+      if(my < 0) my = 0;
+      if(mx < 0) mx = 0;
+
+      menu_win = newwin(menu_h, menu_w, my, mx);
+      if(menu_win != NULL){
+        keypad(menu_win, TRUE);
+        wbkgd(menu_win, COLOR_PAIR(color_pair));
+        menu_open = 1;
+        menu_sel = 0;
+        menu_saved = 0;
+        if(nsent > 0)
+          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+        else
+          prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
+        if(sbar) draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
+        draw_settings(menu_win, menu_sel, rate, width, cols, theme_idx, focus,
+                      kara_on, voice, menu_saved);
+      }
+      continue;
+    }
+
     if(astate == SYNTH){
       if(waitpid(synth_pid, NULL, WNOHANG) > 0){
         synth_i = -1;
@@ -464,6 +639,8 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
     if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
   }
 
+  if(menu_win) delwin(menu_win);
+  free_voices(voices, nvoices);
   delwin(pad);
   if(sbar) delwin(sbar);
   free(sent_row);
@@ -472,6 +649,105 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   free_sentences(sent, nsent);
   cleanup();
   return 0;
+}
+
+static void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
+                          int theme_idx, int focus, int word_on,
+                          const char *voice, int saved){
+  int H, W;
+  getmaxyx(w, H, W);
+  (void)cols;
+
+  char wbuf[24];
+  if(width > 0) snprintf(wbuf, sizeof wbuf, "%d cols", width);
+  else          snprintf(wbuf, sizeof wbuf, "full");
+
+  const char *labels[6] = { "Theme", "Speed", "Width",
+                            "Focus", "Word highlight", "Voice" };
+  char vals[6][40];
+  snprintf(vals[0], sizeof vals[0], "%s", ui_theme_name(theme_idx));
+  snprintf(vals[1], sizeof vals[1], "%d wpm", rate);
+  snprintf(vals[2], sizeof vals[2], "%s", wbuf);
+  snprintf(vals[3], sizeof vals[3], "%s", focus ? "on" : "off");
+  snprintf(vals[4], sizeof vals[4], "%s", word_on ? "on" : "off");
+  snprintf(vals[5], sizeof vals[5], "%s", (voice && *voice) ? voice : "(default)");
+
+  werase(w);
+  box(w, 0, 0);
+  mvwprintw(w, 1, 2, "readeasy settings");
+
+  for(int i = 0; i < 6; i++){
+    if(i == sel) wattron(w, A_REVERSE);
+    mvwprintw(w, 3 + i, 2, " %-14s  < %-18.18s > ", labels[i], vals[i]);
+    if(i == sel) wattroff(w, A_REVERSE);
+  }
+  if(sel == 6) wattron(w, A_REVERSE);
+  mvwprintw(w, 10, 2, " %-38s", "Save settings to config");
+  if(sel == 6) wattroff(w, A_REVERSE);
+
+  if(saved == 1)       mvwprintw(w, 11, 2, "%-40.40s", "Saved.");
+  else if(saved == -1) mvwprintw(w, 11, 2, "%-40.40s", "Could not save config.");
+  else                 mvwprintw(w, 11, 2, "%-40.40s", "");
+
+  mvwprintw(w, H - 2, 2, "%.*s", W - 4,
+            "up/dn pick  left/right change  s save  Esc close");
+  wrefresh(w);
+}
+
+static int list_picker(int rows, int cols, const char *title,
+                       char **items, int n, int start){
+  int h = n + 4;
+  if(h > rows - 2) h = rows - 2;
+  if(h < 5) h = 5;
+  int w = 44;
+  if(w > cols - 2) w = cols - 2;
+  if(w < 20) w = 20;
+  int y = (rows - h) / 2, x = (cols - w) / 2;
+  if(y < 0) y = 0;
+  if(x < 0) x = 0;
+
+  WINDOW *win = newwin(h, w, y, x);
+  if(win == NULL) return -1;
+  keypad(win, TRUE);
+  wtimeout(win, -1);
+  wbkgd(win, COLOR_PAIR(color_pair));
+
+  int view = h - 4;
+  if(view < 1) view = 1;
+  int sel = start;
+  if(sel < 0) sel = 0;
+  if(sel >= n) sel = n - 1;
+  int off = 0, result = -1;
+
+  for(;;){
+    if(sel < off) off = sel;
+    if(sel >= off + view) off = sel - view + 1;
+
+    werase(win);
+    box(win, 0, 0);
+    mvwprintw(win, 1, 2, "%-*.*s", w - 4, w - 4, title);
+    for(int i = 0; i < view && off + i < n; i++){
+      int idx = off + i;
+      if(idx == sel) wattron(win, A_REVERSE);
+      mvwprintw(win, 2 + i, 2, "%-*.*s", w - 4, w - 4, items[idx]);
+      if(idx == sel) wattroff(win, A_REVERSE);
+    }
+    mvwprintw(win, h - 2, 2, "%-*.*s", w - 4, w - 4,
+              "up/dn  Enter select  Esc cancel");
+    wrefresh(win);
+
+    int c = wgetch(win);
+    if(c == KEY_UP || c == 'k'){ if(sel > 0) sel--; }
+    else if(c == KEY_DOWN || c == 'j'){ if(sel < n - 1) sel++; }
+    else if(c == KEY_NPAGE){ sel += view; if(sel >= n) sel = n - 1; }
+    else if(c == KEY_PPAGE){ sel -= view; if(sel < 0) sel = 0; }
+    else if(c == KEY_HOME || c == 'g'){ sel = 0; }
+    else if(c == KEY_END || c == 'G'){ sel = n - 1; }
+    else if(c == '\n' || c == '\r' || c == KEY_ENTER){ result = sel; break; }
+    else if(c == 27 || c == 'q'){ result = -1; break; }
+  }
+  delwin(win);
+  return result;
 }
 
 static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
@@ -704,7 +980,7 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   Up/Dn move   +/- speed   f focus   w word   t theme   [ ] width   q quit ";
+  const char *hint = "Space play/pause   Up/Dn move   +/- speed   , settings   f focus   w word   t theme   [ ] width   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);

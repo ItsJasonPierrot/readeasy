@@ -77,6 +77,7 @@ While a file is open, these keys work:
 | `Home` / `g` | Jump to the first sentence. |
 | `End` / `G` | Jump to the last sentence. |
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
+| `,` | Open the settings menu (theme, speed, width, voice, focus, word highlight; save to config). |
 | `+` | Speak faster (increase words per minute). If reading, the current sentence restarts at the new speed. |
 | `-` | Speak slower (decrease words per minute). If reading, the current sentence restarts at the new speed. |
 | `f` | Toggle focus mode (dim all but the current sentence). |
@@ -233,12 +234,30 @@ If `readeasy` is installed globally (`make install`), drop the `./` and run
 
 ---
 
+## Settings menu
+
+Press `,` while a file is open to bring up a small settings menu — the easiest
+way to change things, with no flags or files to edit:
+
+- **Up / Down** move between settings; **Left / Right** change the selected one
+  (`h` / `j` / `k` / `l` work too). Changes to theme, width, focus, and word
+  highlight apply immediately behind the menu.
+- On the **Voice** row, press **Enter** to open a scrollable list of every
+  installed voice; **Up / Down** to move, **Enter** to choose, **Esc** to
+  cancel.
+- Press **s** to **save** the current settings to your config file, so they
+  become the defaults next time.
+- Press **Esc** (or `,` again) to close the menu.
+
+Opening the menu pauses reading; press `Space` afterwards to start again.
+
 ## Configuration file
 
 `readeasy` reads defaults from `~/.config/readeasy/config` (or
 `$XDG_CONFIG_HOME/readeasy/config`) if it exists, so you can set your
 preferences once instead of passing flags every time. Command-line options
-override the file.
+override the file. The settings menu (`,`, then `s`) writes this file for you,
+so you rarely need to edit it by hand.
 
 The format is one `key value` per line; a line starting with `#` is a comment.
 Recognised keys:

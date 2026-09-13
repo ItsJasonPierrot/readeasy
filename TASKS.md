@@ -1,6 +1,6 @@
 # readeasy — Task List
 
-Last refreshed: 2026-09-10.
+Last refreshed: 2026-09-13.
 
 Mission: make reading easier for **non-technical, neurodivergent users**
 (dyslexia, ADHD, ASD). Priorities are weighted toward accessibility UX and
@@ -8,6 +8,32 @@ getting installed without a terminal fight, then reach, hygiene, and big rocks.
 
 Priority: ★ = do next. Effort: **S** ~hours · **M** ~a day or two · **L** ~a
 week+.
+
+---
+
+## V2 roadmap
+
+Started 2026-09-13, after the v1.2.0 release. Bigger features that make
+readeasy usable without ever learning a flag or editing a file, and widen
+where it runs.
+
+- [x] ★ **In-app settings menu (`,`).** (done 2026-09-13) A modal menu changes
+      theme, speed, width, focus, word highlight, and voice — the first four
+      apply live behind the menu; Voice opens a scrollable picker of every
+      installed voice. `s` saves to the config file, so a non-technical user
+      never edits a file or memorizes a flag. New `config.c` (load + save) and
+      `speech.c` voice listing back it.
+- [ ] **Navigation.**
+  - [ ] **Search (`/`).** Type to find; jump the cursor to the next match. **M**
+  - [ ] **Outline / jump by heading.** Short lines are already kept as their own
+        sentences; detect headings and jump section to section, and/or pop a
+        small table of contents. **M**
+  - [ ] **Help overlay (`?`).** A centred key-bindings card so nobody has to
+        guess the controls. **S**
+- [ ] **Linux (and maybe Windows) support.** Put the speech commands behind a
+      backend: macOS `say`/`afplay`/`afinfo` today; Linux `espeak-ng`/`aplay`/
+      `soxi` (or Piper); Windows later via SAPI/PowerShell. More than doubles
+      the potential audience. **L**
 
 ---
 

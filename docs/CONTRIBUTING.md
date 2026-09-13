@@ -14,10 +14,11 @@ By taking part, you agree to follow our
 readeasy/
 ├── src/            C source files
 │   ├── main.c      Program entry point and argument handling
+│   ├── config.c    Reads and writes the ~/.config/readeasy/config file
 │   ├── input.c     Reads the file, a PDF (via pdftotext), or piped input
 │   ├── reflow.c    Re-flows text, splits sentences, maps words for highlight
-│   ├── speech.c    Synthesizes (say), plays (afplay), times (afinfo) audio
-│   └── ui.c        Terminal interface, keyboard controls, playback (ncurses)
+│   ├── speech.c    say / afplay / afinfo, and lists installed voices
+│   └── ui.c        Terminal interface, keyboard controls, settings menu
 ├── include/        Header files (.h) for each source module
 ├── docs/           Documentation
 ├── tests/          Unit tests (test_reflow.c), run with `make test`
@@ -169,6 +170,10 @@ Check that:
   sentence at the new speed (you hear it again from the start).
 - `w` toggles the word highlight off and on while reading; `--no-word-highlight`
   (or `word_highlight off` in the config) starts with it off.
+- `,` opens the settings menu: Up/Down and Left/Right (or `h`/`j`/`k`/`l`) move
+  and change theme, speed, width, focus, word highlight, and voice; theme/width/
+  focus apply live behind the menu; Enter on Voice opens a scrollable picker;
+  `s` writes the config file; Esc closes. Relaunching picks up the saved values.
 - Resizing the terminal re-flows the text to the new width (status bar stays
   at the bottom).
 - `q` quits cleanly, and `Ctrl-C` while playing also exits cleanly —
