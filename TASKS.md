@@ -23,18 +23,30 @@ where it runs.
       installed voice. `s` saves to the config file, so a non-technical user
       never edits a file or memorizes a flag. New `config.c` (load + save) and
       `speech.c` voice listing back it.
-- [ ] ★ **Better PDF sentence reflow.** Reading a PDF sometimes splits a
-      sentence in half, so it reads out of order. Root cause: `build_sentences`
-      (reflow.c) ends a paragraph whenever a line is shorter than `maxw * 3/5`
-      (the longest line seen). PDF text is hard-wrapped, and a single very long
-      line anywhere — a URL, a wide table row, a footer — inflates `maxw` so that
-      ordinary wrapped lines all fall under the threshold and each gets split off
-      mid-sentence; short mid-paragraph lines split wrongly too. Fix: rejoin by
-      sentence boundaries, not line length — keep joining lines until the text
-      ends in sentence-ending punctuation (or a blank line follows); de-hyphenate
-      words broken across a line end (`inter-\nnational`); and drop bare page
-      numbers and repeated running headers/footers. Add reflow unit tests for
-      each case. Directly serves the reading-quality mission. **M**
+- [ ] ★ **Better PDF reflow (join sentences + strip page furniture).** Reading a
+      PDF sometimes splits a sentence in half *and* reads page headers/footers
+      aloud, so it comes out disordered. Two parts:
+
+  1. **Rejoin by sentence, not line length.** `build_sentences` (reflow.c) ends a
+     paragraph whenever a line is shorter than `maxw * 3/5` (the longest line
+     seen). PDF text is hard-wrapped, and a single very long line anywhere — a
+     URL, a wide table row, a footer — inflates `maxw` so ordinary wrapped lines
+     all fall under the threshold and each splits off mid-sentence; short
+     mid-paragraph lines split wrongly too. Instead keep joining lines until the
+     text ends in sentence-ending punctuation (or a blank line follows), and
+     de-hyphenate words broken across a line end (`inter-\nnational`). Applies to
+     all text.
+  2. **Drop page furniture from PDFs.** `pdftotext` marks page breaks with a
+     form-feed (`\f`); use it in `read_pdf` — before the control-char sanitiser
+     flattens it — to split into pages and remove running headers/footers and
+     page numbers. Real example: the title + URL line repeated at the top of
+     every page of *Tools for Conviviality* (`Ivan Illich - Tools for
+     Conviviality   http://clevercycles.com/...`), plus lines that are just a
+     number or roman numeral. Detect a header/footer as the top/bottom line(s)
+     that recur on most pages. PDF-only.
+
+      Add reflow unit tests for each case. Directly serves the reading-quality
+      mission. **M**
 - [ ] **Navigation.**
   - [ ] **Search (`/`).** Type to find; jump the cursor to the next match. **M**
   - [ ] **Outline / jump by heading.** Short lines are already kept as their own
