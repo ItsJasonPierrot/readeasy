@@ -168,7 +168,7 @@ missing.
 line can be piped in:
 
 ```bash
-man ls | col -b | readeasy            # a man page (col -b strips formatting)
+man ls | readeasy                     # a man page (bold/underline is cleaned up)
 pbpaste | readeasy                    # whatever you've copied (macOS clipboard)
 pdftotext paper.pdf - | readeasy      # the manual version of readeasy paper.pdf
 ```

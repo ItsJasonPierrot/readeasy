@@ -62,22 +62,19 @@ static int split_block(char ***arr, int *n, int *cap, const char *b, size_t blen
   return 0;
 }
 
+static int line_all_caps(const char *s, size_t len){
+  int has_upper = 0;
+  for(size_t i = 0; i < len; i++){
+    unsigned char c = (unsigned char)s[i];
+    if(c >= 'a' && c <= 'z') return 0;
+    if(c >= 'A' && c <= 'Z') has_upper = 1;
+  }
+  return has_upper;
+}
+
 char **build_sentences(const char *text, int *nsent){
   char **arr = NULL;
   int n = 0, cap = 0;
-
-  int maxw = 0, run = 0;
-  for(const char *p = text; ; p++){
-    if(*p == '\n' || *p == '\0'){
-      if(run > maxw) maxw = run;
-      run = 0;
-      if(*p == '\0') break;
-    } else {
-      run++;
-    }
-  }
-  int threshold = maxw * 3 / 5;
-  if(threshold < 1) threshold = 1;
 
   char *para = NULL;
   size_t plen = 0, pcap = 0;
@@ -90,28 +87,39 @@ char **build_sentences(const char *text, int *nsent){
     size_t ll = (size_t)(p - linestart);
     while(ll > 0 && linestart[ll-1] == '\r') ll--;
 
-    int blank = 1;
-    for(size_t q = 0; q < ll; q++)
-      if(!isspace((unsigned char)linestart[q])){ blank = 0; break; }
+    size_t ts = 0;
+    while(ts < ll && isspace((unsigned char)linestart[ts])) ts++;
+    size_t te = ll;
+    while(te > ts && isspace((unsigned char)linestart[te-1])) te--;
+    const char *line = linestart + ts;
+    size_t tlen = te - ts;
 
-    if(blank){
+    int blank = (tlen == 0);
+    int heading = !blank && line_all_caps(line, tlen);
+
+    if(blank || heading){
       if(plen > 0){
         if(split_block(&arr, &n, &cap, para, plen) < 0){ failed = 1; break; }
         plen = 0;
+      }
+      if(heading && split_block(&arr, &n, &cap, line, tlen) < 0){
+        failed = 1;
+        break;
       }
     } else {
       if(plen > 0){
-        if(ensure(&para, &pcap, plen + 1) < 0){ failed = 1; break; }
-        para[plen++] = ' ';
+        if(para[plen-1] == '-' && plen >= 2 &&
+           isalpha((unsigned char)para[plen-2]) &&
+           isalpha((unsigned char)line[0])){
+          plen--;
+        } else {
+          if(ensure(&para, &pcap, plen + 1) < 0){ failed = 1; break; }
+          para[plen++] = ' ';
+        }
       }
-      if(ensure(&para, &pcap, plen + ll) < 0){ failed = 1; break; }
-      memcpy(para + plen, linestart, ll);
-      plen += ll;
-
-      if((int)ll < threshold){
-        if(split_block(&arr, &n, &cap, para, plen) < 0){ failed = 1; break; }
-        plen = 0;
-      }
+      if(ensure(&para, &pcap, plen + tlen) < 0){ failed = 1; break; }
+      memcpy(para + plen, line, tlen);
+      plen += tlen;
     }
 
     if(*p == '\0'){

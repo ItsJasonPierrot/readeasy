@@ -23,40 +23,24 @@ where it runs.
       installed voice. `s` saves to the config file, so a non-technical user
       never edits a file or memorizes a flag. New `config.c` (load + save) and
       `speech.c` voice listing back it.
-- [ ] ★ **Better PDF reflow (join sentences + strip page furniture).** Reading a
-      PDF sometimes splits a sentence in half *and* reads page headers/footers
-      aloud, so it comes out disordered. Two parts:
+- [x] ★ **Better reflow (join sentences, clean man/PDF input).** (done
+      2026-09-14) Three fixes, all mission-critical to reading quality:
+  1. **Rejoin by sentence, not line length.** `build_sentences` (reflow.c) no
+     longer flushes on a `maxw * 3/5` line-length threshold (which a single long
+     line — a URL, a wide row — inflated, splitting ordinary lines mid-sentence).
+     It now joins hard-wrapped lines and lets sentence punctuation split them,
+     de-hyphenates words broken across a line end (`inter-\nnational`), and keeps
+     ALL-CAPS lines (man section headers) as their own units.
+  2. **Man-page overstrike** (`input.c` `collapse_overstrike`). `c\bc`/`_\bc`
+     backspace overstrike is collapsed, so `man x | readeasy` reads cleanly with
+     no `col -b` and no "N NA AM ME E".
+  3. **PDF page furniture** (`input.c` `strip_pdf_furniture`). Uses `pdftotext`'s
+     form-feed page breaks (before the sanitiser flattens them) to drop running
+     headers/footers that recur on most pages and bare page-number lines.
 
-  1. **Rejoin by sentence, not line length.** `build_sentences` (reflow.c) ends a
-     paragraph whenever a line is shorter than `maxw * 3/5` (the longest line
-     seen). PDF text is hard-wrapped, and a single very long line anywhere — a
-     URL, a wide table row, a footer — inflates `maxw` so ordinary wrapped lines
-     all fall under the threshold and each splits off mid-sentence; short
-     mid-paragraph lines split wrongly too. Instead keep joining lines until the
-     text ends in sentence-ending punctuation (or a blank line follows), and
-     de-hyphenate words broken across a line end (`inter-\nnational`). Applies to
-     all text.
-  2. **Drop page furniture from PDFs.** `pdftotext` marks page breaks with a
-     form-feed (`\f`); use it in `read_pdf` — before the control-char sanitiser
-     flattens it — to split into pages and remove running headers/footers and
-     page numbers. Real example: the title + URL line repeated at the top of
-     every page of *Tools for Conviviality* (`Ivan Illich - Tools for
-     Conviviality   http://clevercycles.com/...`), plus lines that are just a
-     number or roman numeral. Detect a header/footer as the top/bottom line(s)
-     that recur on most pages. PDF-only.
-
-      Add reflow unit tests for each case. Directly serves the reading-quality
-      mission. **M**
-- [ ] ★ **Handle man-page overstrike (so `man x | readeasy` just works).**
-      Piping a man page in without `col -b` reads as garbage: man/nroff output
-      renders bold as `c\bc` and underline as `_\bc` (backspace overstrike), and
-      `input.c` replaces every `\b` (0x08) with a space — so "NAME" becomes
-      "N NA AM ME E" and "file" becomes "_ f_ i_ l_ e". Fix in `input.c`, before
-      the control-char replacement: collapse backspace overstrike — on each `\b`,
-      drop the previous output character and keep the overprinting one, so
-      `c\bc` → `c` and `_\bc` → `c` (stacking too, `c\bc\bc` → `c`). Then drop the
-      `col -b` step from the docs' man-page example. Applies to all input; small
-      and self-contained. **S**
+      Covered by 10 new unit tests (43 total, pass under ASan/UBSan); verified
+      `collapse_overstrike` matches `col -b` and furniture-stripping on a real
+      3-page PDF.
 - [ ] **Navigation.**
   - [ ] **Search (`/`).** Type to find; jump the cursor to the next match. **M**
   - [ ] **Outline / jump by heading.** Short lines are already kept as their own

@@ -15,8 +15,8 @@ readeasy/
 ├── src/            C source files
 │   ├── main.c      Program entry point and argument handling
 │   ├── config.c    Reads and writes the ~/.config/readeasy/config file
-│   ├── input.c     Reads the file, a PDF (via pdftotext), or piped input
-│   ├── reflow.c    Re-flows text, splits sentences, maps words for highlight
+│   ├── input.c     Reads file/PDF/pipe; de-overstrikes, strips PDF furniture
+│   ├── reflow.c    Joins hard-wrapped lines into sentences; wraps/maps words
 │   ├── speech.c    say / afplay / afinfo, and lists installed voices
 │   └── ui.c        Terminal interface, keyboard controls, settings menu
 ├── include/        Header files (.h) for each source module
@@ -143,6 +143,11 @@ Check that:
   file. With `pdftotext` off the `PATH`, `readeasy file.pdf` prints a short
   "install poppler" note; a `.pdf` that isn't really a PDF prints "could not
   read PDF"; a valid PDF with no text layer (a scan) says so.
+- Sentences read whole, not cut in half: hard-wrapped lines (from a PDF or an
+  email) rejoin, words hyphenated across a line break rejoin, and a multi-page
+  PDF's repeated running headers/footers and page numbers are dropped.
+- `man ls | ./readeasy` reads cleanly without `col -b` — bold/underline
+  overstrike (`c\bc`, `_\bc`) is collapsed, not read as doubled letters.
 - `↑` / `↓` move the highlighted cursor sentence; `PgUp` / `PgDn` move about a
   screenful; `Home`/`End` (or `g`/`G`) jump to the first/last sentence. `Space`
   starts reading from the cursor sentence, not always from the beginning.

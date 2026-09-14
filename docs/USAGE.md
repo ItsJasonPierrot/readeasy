@@ -209,10 +209,11 @@ Read the output of another command:
 ls -l | ./readeasy
 ```
 
-Read a man page's plain text:
+Read a man page (`readeasy` cleans up the bold/underline overstrike itself, so
+no `col -b` is needed):
 
 ```bash
-man ls | col -b | ./readeasy
+man ls | ./readeasy
 ```
 
 Read a PDF — just pass the `.pdf` file and `readeasy` converts it for you

@@ -30,8 +30,8 @@ src/main.o: src/main.c
 src/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-test: tests/test_reflow.c src/reflow.c
-	$(CC) $(CFLAGS) -o tests/test_reflow tests/test_reflow.c src/reflow.c
+test: tests/test_reflow.c src/reflow.c src/input.c
+	$(CC) $(CFLAGS) -o tests/test_reflow tests/test_reflow.c src/reflow.c src/input.c
 	./tests/test_reflow
 
 install: readeasy
