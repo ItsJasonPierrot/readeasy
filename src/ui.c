@@ -207,8 +207,8 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
 
   audio_ok = (mkdtemp(audio_dir) != NULL) && (sent != NULL);
   if(audio_ok){
-    snprintf(audio_a, sizeof audio_a, "%s/a.aiff", audio_dir);
-    snprintf(audio_b, sizeof audio_b, "%s/b.aiff", audio_dir);
+    snprintf(audio_a, sizeof audio_a, "%s/a.%s", audio_dir, AUDIO_EXT);
+    snprintf(audio_b, sizeof audio_b, "%s/b.%s", audio_dir, AUDIO_EXT);
   }
 
   sent_row = malloc((size_t)(nsent + 1) * sizeof(int));

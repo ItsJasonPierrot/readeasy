@@ -26,3 +26,24 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1
           ASAN_OPTIONS: detect_leaks=0
         run: make test EXTRA_CFLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g"
+
+  build-linux:
+    name: Build and test (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install wide-character ncurses
+        run: sudo apt-get update && sudo apt-get install -y build-essential libncursesw5-dev
+
+      - name: Build with warnings as errors
+        run: make EXTRA_CFLAGS=-Werror
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Run unit tests under AddressSanitizer and UBSan
+        env:
+          UBSAN_OPTIONS: halt_on_error=1
+          ASAN_OPTIONS: detect_leaks=0
+        run: make test EXTRA_CFLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g"

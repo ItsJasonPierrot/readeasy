@@ -51,13 +51,15 @@ character.
   brew install ncurses
   ```
   `make` detects it automatically and links against it.
-- **Linux** — the terminal view works, but speech does **not** work out of the
-  box. macOS has `say`; Linux does not. To get speech on Linux you would need
-  to install a speech tool such as `espeak` and change the program to call it
-  instead of `say` (see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)). You also
-  need the wide-character ncurses development package, e.g.
-  `sudo apt install libncursesw5-dev`.
-- **Windows** — not supported.
+- **Linux** — supported. `readeasy` speaks with [`espeak-ng`](https://github.com/espeak-ng/espeak-ng)
+  and plays with `aplay` (ALSA). Install the three build/runtime pieces, e.g. on
+  Debian/Ubuntu:
+  ```bash
+  sudo apt install build-essential libncursesw5-dev espeak-ng alsa-utils
+  ```
+  Then `make`. (`espeak-ng` and `aplay` are only needed at run time, for speech;
+  the reader itself builds with just a compiler and `ncursesw`.)
+- **Windows** — not supported yet.
 
 ---
 

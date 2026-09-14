@@ -50,10 +50,14 @@ where it runs.
         `Enter` jumps to that section. Reuses `list_picker`.
   - [x] **Help overlay (`?`).** A centred, bordered card lists every key; any
         key closes it. Reuses the modal-window pattern.
-- [ ] **Linux (and maybe Windows) support.** Put the speech commands behind a
-      backend: macOS `say`/`afplay`/`afinfo` today; Linux `espeak-ng`/`aplay`/
-      `soxi` (or Piper); Windows later via SAPI/PowerShell. More than doubles
-      the potential audience. **L**
+- [x] **Linux support.** (done 2026-09-14) `speech.c` now selects a backend at
+      build time (`#ifdef __APPLE__`): Linux synthesizes with `espeak-ng -w`,
+      plays with `aplay`, reads clip duration by parsing the WAV header (no
+      external tool), and lists voices from `espeak-ng --voices`; `AUDIO_EXT`
+      (`speech.h`) picks the file extension. A Linux CI job builds with `-Werror`
+      and runs the unit tests (incl. ASan/UBSan) on `ubuntu-latest`. *Compile +
+      unit tests are green in CI; live speech on a real Linux box still wants a
+      hands-on check.* Windows (SAPI/PowerShell) is a future `#elif`.
 
 ---
 

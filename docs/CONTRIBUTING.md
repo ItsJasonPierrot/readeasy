@@ -17,7 +17,7 @@ readeasy/
 │   ├── config.c    Reads and writes the ~/.config/readeasy/config file
 │   ├── input.c     Reads file/PDF/pipe; de-overstrikes, strips PDF furniture
 │   ├── reflow.c    Joins hard-wrapped lines into sentences; wraps/maps words
-│   ├── speech.c    say / afplay / afinfo, and lists installed voices
+│   ├── speech.c    Speech backends: macOS say / Linux espeak-ng; voices
 │   └── ui.c        Terminal interface, keyboard controls, settings menu
 ├── include/        Header files (.h) for each source module
 ├── docs/           Documentation
@@ -54,14 +54,15 @@ narrow build. Install the wide-character version first:
 brew install ncurses
 ```
 
-On **Linux**, install the wide-character ncurses package:
+On **Linux**, install ncurses plus the speech tools `readeasy` uses there
+(`espeak-ng` to synthesize, `aplay` from `alsa-utils` to play):
 
 ```bash
-sudo apt install build-essential libncursesw5-dev
+sudo apt install build-essential libncursesw5-dev espeak-ng alsa-utils
 ```
 
-Note: speech will not work on Linux until the code is changed to use a Linux
-speech tool (see *Adding Linux speech support* below).
+`espeak-ng` and `aplay` are only needed at run time; the program builds with
+just a compiler and `ncursesw`.
 
 ---
 
@@ -205,27 +206,27 @@ Keep the style consistent with the existing code:
 
 ---
 
-## Adding Linux speech support
+## Speech backends (macOS and Linux)
 
-Speech currently uses the macOS-only `say`, `afplay`, and `afinfo` commands in
-`src/speech.c`, run with `fork` + `exec` (never a shell):
+All speech lives in `src/speech.c`, run with `fork` + `exec` (never a shell) and
+selected at build time with `#ifdef __APPLE__`:
 
-- `synth_to_file()` writes a sentence to an audio file with
-  `say -r RATE [-v VOICE] -o PATH -- TEXT`. The `--` marks the end of options so
-  a sentence starting with `-` can never be read as a flag.
-- `play_file()` plays that file with `afplay`.
-- `audio_duration()` reads the clip's length with `afinfo`, which the word
-  highlight uses to pace itself; without it, the highlight falls back to a
-  rate-based estimate.
+| | macOS | Linux |
+| --- | --- | --- |
+| `synth_to_file()` | `say -r RATE [-v VOICE] -o PATH -- TEXT` | `espeak-ng -s RATE [-v VOICE] -w PATH -- TEXT` |
+| `play_file()` | `afplay PATH` | `aplay -q PATH` |
+| `audio_duration()` | `afinfo` output | parses the WAV header (no external tool) |
+| `list_voices()` | `say -v '?'` | `espeak-ng --voices` |
 
-To support Linux, you would detect the platform (or add a build option) and use
-Linux tools instead — for example synthesizing with `espeak -w file.wav`,
-playing with `aplay`, and reading the duration with `soxi -D` (or estimating
-from the rate). Keep the synth/play split so the next-sentence prefetch in
-`ui.c` still works, and keep passing untrusted text after a `--` (or otherwise
-never as an option).
+The audio file extension follows the platform (`AUDIO_EXT` in `speech.h`:
+`aiff` on macOS, `wav` on Linux). The `--` before the text marks the end of
+options so a sentence starting with `-` is never read as a flag — keep that if
+you add a backend.
 
-If you take this on, please keep macOS working and document any new dependency.
+To add another platform (e.g. **Windows** via SAPI / PowerShell), add an
+`#elif`/`#else` branch to each of the four functions and an `AUDIO_EXT`, keeping
+the synth/play split so the next-sentence prefetch in `ui.c` still works. Please
+keep the other platforms building and document any new dependency.
 
 ---
 
