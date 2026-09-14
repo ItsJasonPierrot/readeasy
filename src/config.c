@@ -39,7 +39,7 @@ static void mkdir_p(const char *path){
 }
 
 void config_load(ui_opts *opts){
-  static char voice_store[128];
+  static char voice_store[512];
   char path[512], dir[512];
 
   if(!config_paths(path, sizeof path, dir, sizeof dir)) return;
