@@ -123,6 +123,7 @@ static int list_picker(int rows, int cols, const char *title,
 static void show_help(int rows, int cols);
 static int find_match(char **sent, int nsent, int first, const char *q, int dir);
 static int prompt_search(WINDOW *sbar, int cols, char *buf, int cap);
+static int is_heading_sentence(const char *s);
 
 int run_ui(char *text, const char *name, const ui_opts *opts){
   int rows, cols, view_rows, has_status;
@@ -655,6 +656,56 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       continue;
     }
 
+    if((character == 'o' || character == 'O') && nsent > 0){
+      if(astate != STOPPED){
+        stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+        kara_stop();
+        astate = STOPPED;
+      }
+      int nout = 0;
+      for(int i = 0; i < nsent; i++)
+        if(is_heading_sentence(sent[i])) nout++;
+
+      if(nout == 0){
+        if(sbar){
+          werase(sbar);
+          mvwprintw(sbar, 0, 1, "%s", "No headings found");
+          wrefresh(sbar);
+        }
+        continue;
+      }
+
+      char **items = malloc((size_t)nout * sizeof(char *));
+      int *idx = malloc((size_t)nout * sizeof(int));
+      if(items != NULL && idx != NULL){
+        int j = 0, startsel = 0;
+        for(int i = 0; i < nsent; i++)
+          if(is_heading_sentence(sent[i])){
+            items[j] = sent[i];
+            idx[j] = i;
+            if(i <= cur) startsel = j;
+            j++;
+          }
+        int chosen = list_picker(rows, cols, "Outline", items, nout, startsel);
+        clearok(curscr, TRUE);
+        touchwin(stdscr);
+        refresh();
+        if(chosen >= 0){
+          int old = cur;
+          cur = idx[chosen];
+          if(focus) apply_base(pad, sent_row, nsent);
+          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
+        } else {
+          if(focus) apply_base(pad, sent_row, nsent);
+          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+        }
+        if(sbar) draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
+      }
+      free(items);
+      free(idx);
+      continue;
+    }
+
     if(astate == SYNTH){
       if(waitpid(synth_pid, NULL, WNOHANG) > 0){
         synth_i = -1;
@@ -783,6 +834,24 @@ static const char *ci_strstr(const char *hay, const char *needle){
   return NULL;
 }
 
+static int is_heading_sentence(const char *s){
+  size_t len = strlen(s);
+  if(len == 0 || len > 60) return 0;
+
+  int has_alpha = 0, has_lower = 0;
+  for(size_t i = 0; i < len; i++){
+    unsigned char c = (unsigned char)s[i];
+    if(c >= 'A' && c <= 'Z') has_alpha = 1;
+    else if(c >= 'a' && c <= 'z'){ has_alpha = 1; has_lower = 1; }
+  }
+  if(!has_alpha) return 0;
+  if(!has_lower) return 1;
+
+  char last = s[len-1];
+  return last != '.' && last != '!' && last != '?' &&
+         last != ':' && last != ';' && last != ',' && last != '"';
+}
+
 static int find_match(char **sent, int nsent, int first, const char *q, int dir){
   if(nsent <= 0) return -1;
   int i = ((first % nsent) + nsent) % nsent;
@@ -820,6 +889,7 @@ static void show_help(int rows, int cols){
     "PgUp / PgDn  move a screenful",
     "Home / End   first / last (g / G)",
     "/  n  N      search / next / previous",
+    "o            outline (jump by heading)",
     "+  /  -      read faster / slower",
     "[  /  ]      narrow / widen column",
     "f            focus mode (dim the rest)",
@@ -1143,7 +1213,7 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   Up/Dn move   / find   +/- speed   , settings   ? help   f focus   w word   t theme   [ ] width   q quit ";
+  const char *hint = "Space play/pause   Up/Dn move   / find   o outline   +/- speed   , settings   ? help   f focus   w word   t theme   [ ] width   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);

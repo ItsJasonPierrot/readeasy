@@ -78,6 +78,7 @@ While a file is open, these keys work:
 | `End` / `G` | Jump to the last sentence. |
 | `/` | Search: type a phrase, `Enter` jumps to the next sentence containing it (case-insensitive), `Esc` cancels. |
 | `n` / `N` | Repeat the last search forward / backward. |
+| `o` | Outline: pop a list of the document's headings; `Enter` jumps to one, `Esc` cancels. |
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
 | `,` | Open the settings menu (theme, speed, width, voice, focus, word highlight; save to config). |
 | `?` | Show a help card listing every key; press any key to close. |

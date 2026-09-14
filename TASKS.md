@@ -41,15 +41,15 @@ where it runs.
       Covered by 10 new unit tests (43 total, pass under ASan/UBSan); verified
       `collapse_overstrike` matches `col -b` and furniture-stripping on a real
       3-page PDF.
-- [ ] **Navigation.**
-  - [x] **Search (`/`).** (done 2026-09-14) Type a phrase in the status bar;
-        `Enter` jumps the cursor to the next sentence containing it (case-
-        insensitive, wraps); `n` / `N` repeat forward / backward; `Esc` cancels.
-  - [ ] **Outline / jump by heading.** Short lines are already kept as their own
-        sentences; detect headings and jump section to section, and/or pop a
-        small table of contents. **M**
-  - [x] **Help overlay (`?`).** (done 2026-09-14) A centred, bordered card
-        lists every key; any key closes it. Reuses the modal-window pattern.
+- [x] **Navigation.** (done 2026-09-14)
+  - [x] **Search (`/`).** Type a phrase in the status bar; `Enter` jumps the
+        cursor to the next sentence containing it (case-insensitive, wraps);
+        `n` / `N` repeat forward / backward; `Esc` cancels.
+  - [x] **Outline / jump by heading (`o`).** Pops a scrollable list of the
+        document's headings (ALL-CAPS lines and short non-sentence lines);
+        `Enter` jumps to that section. Reuses `list_picker`.
+  - [x] **Help overlay (`?`).** A centred, bordered card lists every key; any
+        key closes it. Reuses the modal-window pattern.
 - [ ] **Linux (and maybe Windows) support.** Put the speech commands behind a
       backend: macOS `say`/`afplay`/`afinfo` today; Linux `espeak-ng`/`aplay`/
       `soxi` (or Piper); Windows later via SAPI/PowerShell. More than doubles
