@@ -78,6 +78,7 @@ While a file is open, these keys work:
 | `End` / `G` | Jump to the last sentence. |
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
 | `,` | Open the settings menu (theme, speed, width, voice, focus, word highlight; save to config). |
+| `?` | Show a help card listing every key; press any key to close. |
 | `+` | Speak faster (increase words per minute). If reading, the current sentence restarts at the new speed. |
 | `-` | Speak slower (decrease words per minute). If reading, the current sentence restarts at the new speed. |
 | `f` | Toggle focus mode (dim all but the current sentence). |

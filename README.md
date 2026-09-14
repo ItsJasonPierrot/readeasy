@@ -210,6 +210,7 @@ Once the file is open, use these keys:
 | `Home` / `End` (or `g` / `G`) | Jump to the first or last sentence. |
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
 | `,` | Open the **settings menu** — change theme, speed, width, voice, focus, and word highlight, and save them to your config. |
+| `?` | Show a **help card** listing every key. Press any key to close. |
 | `+` / `-` | Speak faster or slower (words per minute). If you are reading, the current sentence restarts at the new speed. |
 | `f` | Toggle **focus mode** — dim everything except the current sentence. |
 | `w` | Toggle **word highlight** — while reading, light up each word as it is spoken (on by default). |

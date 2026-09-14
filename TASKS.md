@@ -46,8 +46,8 @@ where it runs.
   - [ ] **Outline / jump by heading.** Short lines are already kept as their own
         sentences; detect headings and jump section to section, and/or pop a
         small table of contents. **M**
-  - [ ] **Help overlay (`?`).** A centred key-bindings card so nobody has to
-        guess the controls. **S**
+  - [x] **Help overlay (`?`).** (done 2026-09-14) A centred, bordered card
+        lists every key; any key closes it. Reuses the modal-window pattern.
 - [ ] **Linux (and maybe Windows) support.** Put the speech commands behind a
       backend: macOS `say`/`afplay`/`afinfo` today; Linux `espeak-ng`/`aplay`/
       `soxi` (or Piper); Windows later via SAPI/PowerShell. More than doubles

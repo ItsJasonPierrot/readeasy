@@ -119,6 +119,7 @@ static void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
                           const char *voice, int saved);
 static int list_picker(int rows, int cols, const char *title,
                        char **items, int n, int start);
+static void show_help(int rows, int cols);
 
 int run_ui(char *text, const char *name, const ui_opts *opts){
   int rows, cols, view_rows, has_status;
@@ -579,6 +580,25 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       continue;
     }
 
+    if(character == '?'){
+      if(astate != STOPPED){
+        stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+        kara_stop();
+        astate = STOPPED;
+      }
+      show_help(rows, cols);
+      clearok(curscr, TRUE);
+      touchwin(stdscr);
+      refresh();
+      if(focus && nsent > 0) apply_base(pad, sent_row, nsent);
+      if(nsent > 0)
+        goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+      else
+        prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
+      if(sbar) draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
+      continue;
+    }
+
     if(astate == SYNTH){
       if(waitpid(synth_pid, NULL, WNOHANG) > 0){
         synth_i = -1;
@@ -692,6 +712,49 @@ static void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
   mvwprintw(w, H - 2, 2, "%.*s", W - 4,
             "up/dn pick  left/right change  s save  Esc close");
   wrefresh(w);
+}
+
+static void show_help(int rows, int cols){
+  static const char *keys[] = {
+    "Space        play / pause",
+    "Up / Down    move one sentence",
+    "PgUp / PgDn  move a screenful",
+    "Home / End   first / last (g / G)",
+    "+  /  -      read faster / slower",
+    "[  /  ]      narrow / widen column",
+    "f            focus mode (dim the rest)",
+    "w            word highlight on / off",
+    "t            cycle color theme",
+    ",            settings menu",
+    "?            this help",
+    "q            quit",
+  };
+  int nkeys = (int)(sizeof keys / sizeof keys[0]);
+
+  int h = nkeys + 5;
+  int w = 46;
+  if(h > rows) h = rows;
+  if(w > cols) w = cols;
+  int y = (rows - h) / 2, x = (cols - w) / 2;
+  if(y < 0) y = 0;
+  if(x < 0) x = 0;
+
+  WINDOW *win = newwin(h, w, y, x);
+  if(win == NULL) return;
+  keypad(win, TRUE);
+  wtimeout(win, -1);
+  wbkgd(win, COLOR_PAIR(color_pair));
+
+  werase(win);
+  box(win, 0, 0);
+  mvwprintw(win, 1, 2, "readeasy - keys");
+  for(int i = 0; i < nkeys && 3 + i < h - 2; i++)
+    mvwprintw(win, 3 + i, 3, "%-*.*s", w - 5, w - 5, keys[i]);
+  mvwprintw(win, h - 2, 2, "%-*.*s", w - 4, w - 4, "press any key to close");
+  wrefresh(win);
+
+  wgetch(win);
+  delwin(win);
 }
 
 static int list_picker(int rows, int cols, const char *title,
@@ -980,7 +1043,7 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   Up/Dn move   +/- speed   , settings   f focus   w word   t theme   [ ] width   q quit ";
+  const char *hint = "Space play/pause   Up/Dn move   +/- speed   , settings   ? help   f focus   w word   t theme   [ ] width   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);
