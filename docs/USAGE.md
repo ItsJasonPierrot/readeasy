@@ -76,6 +76,8 @@ While a file is open, these keys work:
 | `PgUp` / `PgDn` | Move the cursor up or down about one screenful. |
 | `Home` / `g` | Jump to the first sentence. |
 | `End` / `G` | Jump to the last sentence. |
+| `/` | Search: type a phrase, `Enter` jumps to the next sentence containing it (case-insensitive), `Esc` cancels. |
+| `n` / `N` | Repeat the last search forward / backward. |
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
 | `,` | Open the settings menu (theme, speed, width, voice, focus, word highlight; save to config). |
 | `?` | Show a help card listing every key; press any key to close. |

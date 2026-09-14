@@ -42,7 +42,9 @@ where it runs.
       `collapse_overstrike` matches `col -b` and furniture-stripping on a real
       3-page PDF.
 - [ ] **Navigation.**
-  - [ ] **Search (`/`).** Type to find; jump the cursor to the next match. **M**
+  - [x] **Search (`/`).** (done 2026-09-14) Type a phrase in the status bar;
+        `Enter` jumps the cursor to the next sentence containing it (case-
+        insensitive, wraps); `n` / `N` repeat forward / backward; `Esc` cancels.
   - [ ] **Outline / jump by heading.** Short lines are already kept as their own
         sentences; detect headings and jump section to section, and/or pop a
         small table of contents. **M**

@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <locale.h>
 #include <time.h>
+#include <ctype.h>
 #include "speech.h"
 #include "reflow.h"
 #include "ui.h"
@@ -120,6 +121,8 @@ static void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
 static int list_picker(int rows, int cols, const char *title,
                        char **items, int n, int start);
 static void show_help(int rows, int cols);
+static int find_match(char **sent, int nsent, int first, const char *q, int dir);
+static int prompt_search(WINDOW *sbar, int cols, char *buf, int cap);
 
 int run_ui(char *text, const char *name, const ui_opts *opts){
   int rows, cols, view_rows, has_status;
@@ -135,6 +138,9 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   int menu_open = 0, menu_sel = 0, menu_saved = 0, vsel = -1, nvoices = 0;
   WINDOW *menu_win = NULL;
   char **voices = NULL;
+
+  char query[128] = "";
+  int have_query = 0;
 
   int astate = STOPPED;
   int synth_i = -1;
@@ -599,6 +605,56 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       continue;
     }
 
+    if(character == '/' && sbar != NULL && nsent > 0){
+      if(astate != STOPPED){
+        stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+        kara_stop();
+        astate = STOPPED;
+      }
+      timeout(-1);
+      char q[128];
+      if(prompt_search(sbar, cols, q, sizeof q)){
+        snprintf(query, sizeof query, "%s", q);
+        have_query = 1;
+        int m = find_match(sent, nsent, cur, query, 1);
+        if(m >= 0){
+          int old = cur;
+          cur = m;
+          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
+          draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
+        } else {
+          werase(sbar);
+          mvwprintw(sbar, 0, 1, "Not found: %.*s", cols - 13, query);
+          wrefresh(sbar);
+        }
+      } else {
+        draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
+      }
+      continue;
+    }
+
+    if((character == 'n' || character == 'N') && have_query &&
+       sbar != NULL && nsent > 0){
+      if(astate != STOPPED){
+        stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+        kara_stop();
+        astate = STOPPED;
+      }
+      int dir = (character == 'n') ? 1 : -1;
+      int m = find_match(sent, nsent, cur + dir, query, dir);
+      if(m >= 0){
+        int old = cur;
+        cur = m;
+        goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
+        draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
+      } else {
+        werase(sbar);
+        mvwprintw(sbar, 0, 1, "Not found: %.*s", cols - 13, query);
+        wrefresh(sbar);
+      }
+      continue;
+    }
+
     if(astate == SYNTH){
       if(waitpid(synth_pid, NULL, WNOHANG) > 0){
         synth_i = -1;
@@ -714,12 +770,56 @@ static void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
   wrefresh(w);
 }
 
+static const char *ci_strstr(const char *hay, const char *needle){
+  if(*needle == '\0') return hay;
+  for(; *hay; hay++){
+    const char *h = hay, *n = needle;
+    while(*h && *n && tolower((unsigned char)*h) == tolower((unsigned char)*n)){
+      h++;
+      n++;
+    }
+    if(*n == '\0') return hay;
+  }
+  return NULL;
+}
+
+static int find_match(char **sent, int nsent, int first, const char *q, int dir){
+  if(nsent <= 0) return -1;
+  int i = ((first % nsent) + nsent) % nsent;
+  for(int k = 0; k < nsent; k++){
+    if(ci_strstr(sent[i], q) != NULL) return i;
+    i = ((i + dir) % nsent + nsent) % nsent;
+  }
+  return -1;
+}
+
+static int prompt_search(WINDOW *sbar, int cols, char *buf, int cap){
+  int len = 0;
+  buf[0] = '\0';
+  curs_set(1);
+  for(;;){
+    werase(sbar);
+    mvwprintw(sbar, 0, 1, "Search: %.*s", cols - 10, buf);
+    wrefresh(sbar);
+    int c = getch();
+    if(c == '\n' || c == '\r' || c == KEY_ENTER){ curs_set(0); return len > 0; }
+    if(c == 27){ curs_set(0); return 0; }
+    if(c == KEY_BACKSPACE || c == 127 || c == 8){
+      if(len > 0) buf[--len] = '\0';
+    } else if(c >= 32 && c < 127 && len < cap - 1){
+      buf[len++] = (char)c;
+      buf[len] = '\0';
+    }
+  }
+}
+
 static void show_help(int rows, int cols){
   static const char *keys[] = {
     "Space        play / pause",
     "Up / Down    move one sentence",
     "PgUp / PgDn  move a screenful",
     "Home / End   first / last (g / G)",
+    "/  n  N      search / next / previous",
     "+  /  -      read faster / slower",
     "[  /  ]      narrow / widen column",
     "f            focus mode (dim the rest)",
@@ -1043,7 +1143,7 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   Up/Dn move   +/- speed   , settings   ? help   f focus   w word   t theme   [ ] width   q quit ";
+  const char *hint = "Space play/pause   Up/Dn move   / find   +/- speed   , settings   ? help   f focus   w word   t theme   [ ] width   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);

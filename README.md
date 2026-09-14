@@ -208,6 +208,7 @@ Once the file is open, use these keys:
 | `↑` / `↓` | Move the highlighted cursor up or down one sentence. |
 | `PgUp` / `PgDn` | Move up or down about one screenful. |
 | `Home` / `End` (or `g` / `G`) | Jump to the first or last sentence. |
+| `/` | **Search** — type a phrase and jump to the next sentence that contains it (case-insensitive); `n` / `N` repeat forward / backward. |
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
 | `,` | Open the **settings menu** — change theme, speed, width, voice, focus, and word highlight, and save them to your config. |
 | `?` | Show a **help card** listing every key. Press any key to close. |
