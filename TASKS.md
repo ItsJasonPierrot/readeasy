@@ -133,6 +133,14 @@ where it runs.
 - [x] **Version from git tags.** (done 2026-09-10) `make` stamps the version
       from `git describe --tags --always --dirty` via `-DREADEASY_VERSION` (on
       `src/main.o` only); falls back to the built-in default outside git.
+- [x] **Pull modal widgets out of `ui.c`.** (done 2026-09-14) The overlay
+      widgets (settings menu draw, list picker, help card, search prompt) moved
+      to `src/widgets.c`, taking `color_pair` as a parameter so they hold no
+      shared state. `ui.c` 1238 → ~1070 lines.
+- [ ] **Consider splitting `run_ui`.** It is still ~700 lines (the main loop +
+      every key handler). Splitting it would mean threading ~15 locals through a
+      context struct — real regression risk on the hot path, so deferred until it
+      actually gets in the way. **M**
 
 ## Big rocks (later)
 

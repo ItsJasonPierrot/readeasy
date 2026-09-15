@@ -18,7 +18,8 @@ readeasy/
 │   ├── input.c     Reads file/PDF/pipe; de-overstrikes, strips PDF furniture
 │   ├── reflow.c    Joins hard-wrapped lines into sentences; wraps/maps words
 │   ├── speech.c    Speech backends: macOS say / Linux espeak-ng; voices
-│   └── ui.c        Terminal interface, keyboard controls, settings menu
+│   ├── ui.c        Terminal interface, keyboard controls, playback loop
+│   └── widgets.c   Modal overlays: settings menu, list picker, help, search
 ├── include/        Header files (.h) for each source module
 ├── docs/           Documentation
 ├── tests/          Unit tests (test_reflow.c), run with `make test`
