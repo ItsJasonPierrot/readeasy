@@ -42,6 +42,8 @@ out/
 .idea/
 # VS Code
 .vscode/
+# Claude Code
+.claude/
 # Vim
 *.swp
 *.swo
