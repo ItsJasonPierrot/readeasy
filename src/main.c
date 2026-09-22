@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
   char *buffer;
   int input_text = STDIN_FILENO;
   ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .theme = 0,
-                   .focus = 0, .width = 0, .word_highlight = 1 };
+                   .focus = 0, .width = 0, .word_highlight = 1, .pause_ms = 0 };
 
   config_load(&opts);
 

@@ -80,7 +80,8 @@ While a file is open, these keys work:
 | `n` / `N` | Repeat the last search forward / backward. |
 | `o` | Outline: pop a list of the document's headings; `Enter` jumps to one, `Esc` cancels. |
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
-| `,` | Open the settings menu (theme, speed, width, voice, focus, word highlight; save to config). |
+| `r` | Replay the current sentence from the start. |
+| `,` | Open the settings menu (theme, speed, width, voice, focus, word highlight, pause; save to config). |
 | `?` | Show a help card listing every key; press any key to close. |
 | `+` | Speak faster (increase words per minute). If reading, the current sentence restarts at the new speed. |
 | `-` | Speak slower (decrease words per minute). If reading, the current sentence restarts at the new speed. |
@@ -245,8 +246,9 @@ Press `,` while a file is open to bring up a small settings menu — the easiest
 way to change things, with no flags or files to edit:
 
 - **Up / Down** move between settings; **Left / Right** change the selected one
-  (`h` / `j` / `k` / `l` work too). Changes to theme, width, focus, and word
-  highlight apply immediately behind the menu.
+  (`h` / `j` / `k` / `l` work too). The settings are theme, speed, width, focus,
+  word highlight, voice, and the **Pause** between sentences (0–2000 ms). Changes
+  to theme, width, and focus apply immediately behind the menu.
 - On the **Voice** row, press **Enter** to open a scrollable list of every
   installed voice; **Up / Down** to move, **Enter** to choose, **Esc** to
   cancel.
@@ -275,6 +277,7 @@ Recognised keys:
 | `theme` | `none`, `blue`, `cream`, `contrast`, or `dark`. |
 | `focus` | `on` or `off`. |
 | `word_highlight` | `on` or `off` (light up each word while reading; on by default). |
+| `pause` | Milliseconds of silence between sentences, 0–2000 (0 = none). |
 
 Example `~/.config/readeasy/config`:
 

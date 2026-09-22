@@ -154,16 +154,18 @@ Nice-to-haves, none required — the app is feature-complete without them.
 - [ ] **Remember-your-place + bookmarks.** Save the cursor sentence per file
       (keyed by path) so a long read resumes where you left off; a key to drop
       and jump to named bookmarks. Highest comfort value for long reads. **M**
-- [ ] **Replay current sentence (`r`).** Re-speak the current sentence from the
-      start. Quick win. **S**
-- [ ] **Time-remaining in the status bar.** Estimate from words left ÷ rate (or
-      sum of clip durations) and show it beside the position. Quick win. **S**
+- [x] **Replay current sentence (`r`).** (done 2026-09-22) `r` re-synthesizes
+      and replays the current sentence from the start.
+- [x] **Time-remaining in the status bar.** (done 2026-09-22) Estimated from
+      words left ÷ rate (per-sentence cumulative word counts), shown as
+      `~M:SS left` beside the position.
 - [ ] **Bionic word emphasis.** Bold the first few letters of each word (a
       dyslexia/ADHD reading aid). Needs per-word attribute runs, which
       `wrap_words` already locates. **M**
-- [ ] **Adjustable pause between sentences.** A configurable gap (`say`
-      `[[slnc N]]` or a real sleep between clips), tunable in the settings menu.
-      **S**
+- [x] **Adjustable pause between sentences.** (done 2026-09-22) A configurable
+      gap (0–2000 ms) held between sentences via a `GAP` state in the playback
+      loop; tunable in the settings menu and saved as `pause` in the config.
+      Cross-platform (no `[[slnc]]`), and gapless at 0.
 
 ## Not planned
 

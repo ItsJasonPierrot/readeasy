@@ -79,6 +79,9 @@ void config_load(ui_opts *opts){
       opts->focus = parse_bool(val);
     } else if(!strcmp(key, "word_highlight")){
       opts->word_highlight = parse_bool(val);
+    } else if(!strcmp(key, "pause")){
+      char *e; long v = strtol(val, &e, 10);
+      if(*val && *e == '\0' && v >= 0 && v <= PAUSE_MAX) opts->pause_ms = (int)v;
     }
   }
 
@@ -102,6 +105,7 @@ int config_save(const ui_opts *opts){
   fprintf(f, "theme %s\n", ui_theme_name(opts->theme));
   fprintf(f, "focus %s\n", opts->focus ? "on" : "off");
   fprintf(f, "word_highlight %s\n", opts->word_highlight ? "on" : "off");
+  if(opts->pause_ms > 0) fprintf(f, "pause %d\n", opts->pause_ms);
 
   fclose(f);
   return 0;

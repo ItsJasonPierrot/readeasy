@@ -9,6 +9,6 @@ int list_picker(int rows, int cols, const char *title,
                 char **items, int n, int start, short color_pair);
 void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
                    int theme_idx, int focus, int word_on, const char *voice,
-                   int saved);
+                   int pause_ms, int saved);
 
 #endif

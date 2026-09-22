@@ -13,7 +13,7 @@
 #include "config.h"
 #include "widgets.h"
 
-enum { STOPPED, SYNTH, PLAY };
+enum { STOPPED, SYNTH, PLAY, GAP };
 
 #define RATE_STEP 20
 
@@ -68,6 +68,17 @@ static double kt0 = 0.0;
 static double kdur = 0.0;
 static int kplaying = 0;
 
+static int *word_cum = NULL;
+
+static int count_words(const char *s){
+  int n = 0, in = 0;
+  for(; *s; s++){
+    if(*s == ' ' || *s == '\n' || *s == '\t' || *s == '\r') in = 0;
+    else if(!in){ in = 1; n++; }
+  }
+  return n;
+}
+
 static void cleanup(void){
   if(curses_active){
     endwin();
@@ -116,6 +127,7 @@ static void kara_begin(WINDOW *pad, char **sent, const int *sent_row, int cur,
 static void kara_advance(WINDOW *pad, const int *sent_row, int cur,
                          int top, int view_rows, int cols);
 static void kara_stop(void);
+static double kara_now(void);
 static int find_match(char **sent, int nsent, int first, const char *q, int dir);
 static int is_heading_sentence(const char *s);
 
@@ -146,6 +158,8 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   int theme_idx = opts->theme;
   const char *voice = opts->voice;
   char *pcur = audio_a, *pnext = audio_b, *pswap;
+  int gap_ms = opts->pause_ms;
+  double gap_until = 0.0;
 
   kara_on = opts->word_highlight ? 1 : 0;
 
@@ -162,6 +176,13 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       if(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r') in_word = 0;
       else if(!in_word){ in_word = 1; words++; }
     }
+  }
+
+  word_cum = malloc((size_t)(nsent + 1) * sizeof(int));
+  if(word_cum != NULL){
+    word_cum[0] = 0;
+    for(int i = 0; i < nsent; i++)
+      word_cum[i+1] = word_cum[i] + count_words(sent[i]);
   }
 
   setlocale(LC_ALL, "");
@@ -239,19 +260,21 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
     if(menu_open){
       int repaint_pad = 0, dir = 0;
 
-      if(character == KEY_UP || character == 'k')        menu_sel = (menu_sel + 6) % 7;
-      else if(character == KEY_DOWN || character == 'j') menu_sel = (menu_sel + 1) % 7;
+      if(character == KEY_UP || character == 'k')        menu_sel = (menu_sel + 7) % 8;
+      else if(character == KEY_DOWN || character == 'j') menu_sel = (menu_sel + 1) % 8;
       else if(character == KEY_LEFT  || character == 'h') dir = -1;
       else if(character == KEY_RIGHT || character == 'l') dir = 1;
       else if(character == 's' || character == 'S'){
         ui_opts co = { .rate = rate, .voice = voice, .theme = theme_idx,
-                       .focus = focus, .width = width, .word_highlight = kara_on };
+                       .focus = focus, .width = width, .word_highlight = kara_on,
+                       .pause_ms = gap_ms };
         menu_saved = (config_save(&co) == 0) ? 1 : -1;
       }
       else if(character == '\n' || character == '\r' || character == KEY_ENTER){
-        if(menu_sel == 6){
+        if(menu_sel == 7){
           ui_opts co = { .rate = rate, .voice = voice, .theme = theme_idx,
-                         .focus = focus, .width = width, .word_highlight = kara_on };
+                         .focus = focus, .width = width, .word_highlight = kara_on,
+                         .pause_ms = gap_ms };
           menu_saved = (config_save(&co) == 0) ? 1 : -1;
         } else if(menu_sel == 5){
           int pn = nvoices + 1;
@@ -350,6 +373,11 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
               voice = (vsel >= 0) ? voices[vsel] : NULL;
             }
             break;
+          case 6:
+            gap_ms += dir * PAUSE_STEP;
+            if(gap_ms < 0) gap_ms = 0;
+            if(gap_ms > PAUSE_MAX) gap_ms = PAUSE_MAX;
+            break;
         }
       }
 
@@ -361,7 +389,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       }
       if(menu_win)
         draw_settings(menu_win, menu_sel, rate, width, cols, theme_idx, focus,
-                      kara_on, voice, menu_saved);
+                      kara_on, voice, gap_ms, menu_saved);
       continue;
     }
 
@@ -440,6 +468,19 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         paint_line(pad, sent_row, cur, A_REVERSE);
         prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
         astate = STOPPED;
+      }
+    }
+
+    if(character == 'r' && nsent > 0 && audio_ok){
+      stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+      kara_stop();
+      if(synth_to_file(sent[cur], pcur, rate, voice, &synth_pid) == 0){
+        synth_i = cur;
+        astate = SYNTH;
+      } else {
+        astate = STOPPED;
+        paint_line(pad, sent_row, cur, A_REVERSE);
+        prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
       }
     }
 
@@ -557,7 +598,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         for(int i = 0; i < nvoices; i++)
           if(strcmp(voice, voices[i]) == 0){ vsel = i; break; }
 
-      int menu_h = 14, menu_w = 54;
+      int menu_h = 15, menu_w = 54;
       if(menu_h > rows) menu_h = rows;
       if(menu_w > cols) menu_w = cols;
       int my = (rows - menu_h) / 2, mx = (cols - menu_w) / 2;
@@ -577,7 +618,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
           prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
         if(sbar) draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
         draw_settings(menu_win, menu_sel, rate, width, cols, theme_idx, focus,
-                      kara_on, voice, menu_saved);
+                      kara_on, voice, gap_ms, menu_saved);
       }
       continue;
     }
@@ -730,33 +771,48 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
           astate = STOPPED;
         } else {
           kara_stop();
-          int old = cur;
-          cur++;
-          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
-          pswap = pcur; pcur = pnext; pnext = pswap;
-          if(ready == cur){
-            ready = -1;
-            if(play_file(pcur, &play_pid) == 0){
-              astate = PLAY;
-              kara_begin(pad, sent, sent_row, cur, pcur, rate, top, view_rows, cols);
-              if(cur + 1 < nsent &&
-                 synth_to_file(sent[cur+1], pnext, rate, voice, &synth_pid) == 0){
-                synth_i = cur + 1;
-              }
-            } else {
-              astate = STOPPED;
-            }
-          } else if(synth_i == cur){
-            astate = SYNTH;
-          } else if(synth_to_file(sent[cur], pcur, rate, voice, &synth_pid) == 0){
-            synth_i = cur;
-            astate = SYNTH;
-          } else {
-            astate = STOPPED;
+          if(gap_ms > 0){
+            paint_line(pad, sent_row, cur, A_REVERSE);
+            prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
           }
+          gap_until = kara_now() + gap_ms / 1000.0;
+          astate = GAP;
         }
       }
     }
+
+    if(astate == GAP){
+      if(synth_i >= 0 && waitpid(synth_pid, NULL, WNOHANG) > 0){
+        ready = synth_i;
+        synth_i = -1;
+      }
+      if(kara_now() >= gap_until){
+        int old = cur;
+        cur++;
+        goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
+        pswap = pcur; pcur = pnext; pnext = pswap;
+        if(ready == cur){
+          ready = -1;
+          if(play_file(pcur, &play_pid) == 0){
+            astate = PLAY;
+            kara_begin(pad, sent, sent_row, cur, pcur, rate, top, view_rows, cols);
+            if(cur + 1 < nsent &&
+               synth_to_file(sent[cur+1], pnext, rate, voice, &synth_pid) == 0)
+              synth_i = cur + 1;
+          } else {
+            astate = STOPPED;
+          }
+        } else if(synth_i == cur){
+          astate = SYNTH;
+        } else if(synth_to_file(sent[cur], pcur, rate, voice, &synth_pid) == 0){
+          synth_i = cur;
+          astate = SYNTH;
+        } else {
+          astate = STOPPED;
+        }
+      }
+    }
+
     if(astate == PLAY)
       kara_advance(pad, sent_row, cur, top, view_rows, cols);
     if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
@@ -769,6 +825,8 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   free(sent_row);
   free(kspan);
   kspan = NULL;
+  free(word_cum);
+  word_cum = NULL;
   free_sentences(sent, nsent);
   cleanup();
   return 0;
@@ -1041,11 +1099,17 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   %d/%d  %d%%   %d words   %s   %d wpm",
             name, cur + 1, nsent, pct, words,
             playing ? "playing" : "paused", rate);
+    if(word_cum != NULL && rate > 0){
+      int left = word_cum[nsent] - word_cum[cur];
+      int secs = (int)((double)left * 60.0 / rate + 0.5);
+      if(secs >= 60)     wprintw(sbar, "   ~%d:%02d left", secs / 60, secs % 60);
+      else if(secs > 0)  wprintw(sbar, "   ~%ds left", secs);
+    }
   } else {
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   Up/Dn move   / find   o outline   +/- speed   , settings   ? help   f focus   w word   t theme   [ ] width   q quit ";
+  const char *hint = "Space play/pause   r replay   Up/Dn move   / find   o outline   +/- speed   , settings   ? help   f focus   w word   t theme   [ ] width   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);

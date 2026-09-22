@@ -213,7 +213,8 @@ Once the file is open, use these keys:
 | `/` | **Search** — type a phrase and jump to the next sentence that contains it (case-insensitive); `n` / `N` repeat forward / backward. |
 | `o` | **Outline** — pop a list of headings and jump straight to a section. |
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
-| `,` | Open the **settings menu** — change theme, speed, width, voice, focus, and word highlight, and save them to your config. |
+| `r` | **Replay** the current sentence from the start. |
+| `,` | Open the **settings menu** — change theme, speed, width, voice, focus, word highlight, and the pause between sentences, and save them to your config. |
 | `?` | Show a **help card** listing every key. Press any key to close. |
 | `+` / `-` | Speak faster or slower (words per minute). If you are reading, the current sentence restarts at the new speed. |
 | `f` | Toggle **focus mode** — dim everything except the current sentence. |

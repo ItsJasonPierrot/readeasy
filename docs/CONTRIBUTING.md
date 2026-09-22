@@ -177,6 +177,10 @@ Check that:
   sentence at the new speed (you hear it again from the start).
 - `w` toggles the word highlight off and on while reading; `--no-word-highlight`
   (or `word_highlight off` in the config) starts with it off.
+- `r` replays the current sentence from the start (works whether playing or
+  paused). The status bar shows an estimated `~M:SS left`.
+- The settings menu's **Pause** row (or `pause N` in the config, 0–2000 ms) adds
+  a silent gap between sentences; at `0` playback stays gapless.
 - `,` opens the settings menu: Up/Down and Left/Right (or `h`/`j`/`k`/`l`) move
   and change theme, speed, width, focus, word highlight, and voice; theme/width/
   focus apply live behind the menu; Enter on Voice opens a scrollable picker;

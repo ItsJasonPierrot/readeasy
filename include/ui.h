@@ -14,7 +14,11 @@ typedef struct {
   int focus;
   int width;
   int word_highlight;
+  int pause_ms;
 } ui_opts;
+
+#define PAUSE_MAX 2000
+#define PAUSE_STEP 100
 
 int run_ui(char *text, const char *name, const ui_opts *opts);
 
