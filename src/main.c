@@ -37,6 +37,7 @@ static void usage(FILE *f){
 "      --theme NAME color theme: none, blue, cream, contrast, dark (default none)\n"
 "      --color      shorthand for --theme blue\n"
 "      --no-word-highlight  do not light up each word while reading\n"
+"      --bionic     bold the first half of each word (a reading aid)\n"
 "  -v, --version    print version and exit\n"
 "  -h, --help       print this help and exit\n"
 "\n"
@@ -47,7 +48,8 @@ int main(int argc, char *argv[]){
   char *buffer;
   int input_text = STDIN_FILENO;
   ui_opts opts = { .rate = RATE_DEFAULT, .voice = NULL, .theme = 0,
-                   .focus = 0, .width = 0, .word_highlight = 1, .pause_ms = 0 };
+                   .focus = 0, .width = 0, .word_highlight = 1, .pause_ms = 0,
+                   .bionic = 0 };
 
   config_load(&opts);
 
@@ -61,6 +63,8 @@ int main(int argc, char *argv[]){
     {"no-color", no_argument,       0, 'N'},
     {"word-highlight",    no_argument, 0, 'W'},
     {"no-word-highlight", no_argument, 0, 'D'},
+    {"bionic",    no_argument, 0, 'B'},
+    {"no-bionic", no_argument, 0, 'X'},
     {"version",  no_argument,       0, 'v'},
     {"help",     no_argument,       0, 'h'},
     {0, 0, 0, 0}
@@ -111,6 +115,8 @@ int main(int argc, char *argv[]){
       case 'N': opts.theme = 0;                   break;
       case 'W': opts.word_highlight = 1;          break;
       case 'D': opts.word_highlight = 0;          break;
+      case 'B': opts.bionic = 1;                  break;
+      case 'X': opts.bionic = 0;                  break;
       case 'v': printf("readeasy %s\n", READEASY_VERSION); return 0;
       case 'h': usage(stdout);            return 0;
       default:  usage(stderr);            return 1;

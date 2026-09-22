@@ -181,6 +181,9 @@ Check that:
   paused). The status bar shows an estimated `~M:SS left`.
 - The settings menu's **Pause** row (or `pause N` in the config, 0–2000 ms) adds
   a silent gap between sentences; at `0` playback stays gapless.
+- `b` (or `--bionic` / `bionic on` in the config) bolds the first half of each
+  word, and the bold combines with the cursor highlight, focus dim, and word
+  highlight rather than replacing them.
 - `,` opens the settings menu: Up/Down and Left/Right (or `h`/`j`/`k`/`l`) move
   and change theme, speed, width, focus, word highlight, and voice; theme/width/
   focus apply live behind the menu; Enter on Voice opens a scrollable picker;

@@ -36,6 +36,7 @@ void show_help(int rows, int cols, short color_pair){
     "[  /  ]      narrow / widen column",
     "f            focus mode (dim the rest)",
     "w            word highlight on / off",
+    "b            bionic emphasis on / off",
     "t            cycle color theme",
     ",            settings menu",
     "?            this help",
@@ -127,7 +128,7 @@ int list_picker(int rows, int cols, const char *title,
 
 void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
                    int theme_idx, int focus, int word_on,
-                   const char *voice, int pause_ms, int saved){
+                   const char *voice, int pause_ms, int bionic, int saved){
   int H, W;
   getmaxyx(w, H, W);
   (void)cols;
@@ -136,9 +137,9 @@ void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
   if(width > 0) snprintf(wbuf, sizeof wbuf, "%d cols", width);
   else          snprintf(wbuf, sizeof wbuf, "full");
 
-  const char *labels[7] = { "Theme", "Speed", "Width", "Focus",
-                            "Word highlight", "Voice", "Pause" };
-  char vals[7][40];
+  const char *labels[8] = { "Theme", "Speed", "Width", "Focus",
+                            "Word highlight", "Voice", "Pause", "Bionic" };
+  char vals[8][40];
   snprintf(vals[0], sizeof vals[0], "%s", ui_theme_name(theme_idx));
   snprintf(vals[1], sizeof vals[1], "%d wpm", rate);
   snprintf(vals[2], sizeof vals[2], "%s", wbuf);
@@ -147,23 +148,24 @@ void draw_settings(WINDOW *w, int sel, int rate, int width, int cols,
   snprintf(vals[5], sizeof vals[5], "%s", (voice && *voice) ? voice : "(default)");
   if(pause_ms > 0) snprintf(vals[6], sizeof vals[6], "%d ms", pause_ms);
   else             snprintf(vals[6], sizeof vals[6], "off");
+  snprintf(vals[7], sizeof vals[7], "%s", bionic ? "on" : "off");
 
   werase(w);
   box(w, 0, 0);
   mvwprintw(w, 1, 2, "readeasy settings");
 
-  for(int i = 0; i < 7; i++){
+  for(int i = 0; i < 8; i++){
     if(i == sel) wattron(w, A_REVERSE);
     mvwprintw(w, 3 + i, 2, " %-14s  < %-18.18s > ", labels[i], vals[i]);
     if(i == sel) wattroff(w, A_REVERSE);
   }
-  if(sel == 7) wattron(w, A_REVERSE);
-  mvwprintw(w, 11, 2, " %-38s", "Save settings to config");
-  if(sel == 7) wattroff(w, A_REVERSE);
+  if(sel == 8) wattron(w, A_REVERSE);
+  mvwprintw(w, 12, 2, " %-38s", "Save settings to config");
+  if(sel == 8) wattroff(w, A_REVERSE);
 
-  if(saved == 1)       mvwprintw(w, 12, 2, "%-40.40s", "Saved.");
-  else if(saved == -1) mvwprintw(w, 12, 2, "%-40.40s", "Could not save config.");
-  else                 mvwprintw(w, 12, 2, "%-40.40s", "");
+  if(saved == 1)       mvwprintw(w, 13, 2, "%-40.40s", "Saved.");
+  else if(saved == -1) mvwprintw(w, 13, 2, "%-40.40s", "Could not save config.");
+  else                 mvwprintw(w, 13, 2, "%-40.40s", "");
 
   mvwprintw(w, H - 2, 2, "%.*s", W - 4,
             "up/dn pick  left/right change  s save  Esc close");

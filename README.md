@@ -188,6 +188,7 @@ pdftotext paper.pdf - | readeasy      # the manual version of readeasy paper.pdf
 | `--theme NAME` | Color theme: `none` (default), `blue`, `cream` (dyslexia-friendly dark-on-cream), `contrast` (white-on-black), `dark`. Cycle live with `t`. |
 | `--color` | Shorthand for `--theme blue`. |
 | `--no-word-highlight` | Don't light up each word while reading (word highlight is on by default; toggle live with `w`). |
+| `--bionic` | Start with bionic emphasis on — bold the first half of each word (toggle live with `b`). |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
 
@@ -219,6 +220,7 @@ Once the file is open, use these keys:
 | `+` / `-` | Speak faster or slower (words per minute). If you are reading, the current sentence restarts at the new speed. |
 | `f` | Toggle **focus mode** — dim everything except the current sentence. |
 | `w` | Toggle **word highlight** — while reading, light up each word as it is spoken (on by default). |
+| `b` | Toggle **bionic emphasis** — bold the first half of each word (a reading aid; off by default, `--bionic` to start on). |
 | `t` | Cycle the color theme. |
 | `[` / `]` | Narrow or widen the centred reading column (`]` past full width turns it off). |
 | `Ctrl-L` | Redraw the screen (useful if it looks stale after switching terminal tabs). |

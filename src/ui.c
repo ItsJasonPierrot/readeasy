@@ -69,6 +69,8 @@ static double kdur = 0.0;
 static int kplaying = 0;
 
 static int *word_cum = NULL;
+static int bionic = 0;
+static char **g_sent = NULL;
 
 static int count_words(const char *s){
   int n = 0, in = 0;
@@ -130,6 +132,7 @@ static void kara_stop(void);
 static double kara_now(void);
 static int find_match(char **sent, int nsent, int first, const char *q, int dir);
 static int is_heading_sentence(const char *s);
+static void bionic_line(WINDOW *pad, const int *row, int i, attr_t attr);
 
 int run_ui(char *text, const char *name, const ui_opts *opts){
   int rows, cols, view_rows, has_status;
@@ -162,12 +165,14 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   double gap_until = 0.0;
 
   kara_on = opts->word_highlight ? 1 : 0;
+  bionic = opts->bionic ? 1 : 0;
 
   if(rate < RATE_MIN) rate = RATE_MIN;
   if(rate > RATE_MAX) rate = RATE_MAX;
   normal_attr = focus ? A_DIM : A_NORMAL;
 
   sent = build_sentences(text, &nsent);
+  g_sent = sent;
 
   int words = 0;
   {
@@ -260,21 +265,21 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
     if(menu_open){
       int repaint_pad = 0, dir = 0;
 
-      if(character == KEY_UP || character == 'k')        menu_sel = (menu_sel + 7) % 8;
-      else if(character == KEY_DOWN || character == 'j') menu_sel = (menu_sel + 1) % 8;
+      if(character == KEY_UP || character == 'k')        menu_sel = (menu_sel + 8) % 9;
+      else if(character == KEY_DOWN || character == 'j') menu_sel = (menu_sel + 1) % 9;
       else if(character == KEY_LEFT  || character == 'h') dir = -1;
       else if(character == KEY_RIGHT || character == 'l') dir = 1;
       else if(character == 's' || character == 'S'){
         ui_opts co = { .rate = rate, .voice = voice, .theme = theme_idx,
                        .focus = focus, .width = width, .word_highlight = kara_on,
-                       .pause_ms = gap_ms };
+                       .pause_ms = gap_ms, .bionic = bionic };
         menu_saved = (config_save(&co) == 0) ? 1 : -1;
       }
       else if(character == '\n' || character == '\r' || character == KEY_ENTER){
-        if(menu_sel == 7){
+        if(menu_sel == 8){
           ui_opts co = { .rate = rate, .voice = voice, .theme = theme_idx,
                          .focus = focus, .width = width, .word_highlight = kara_on,
-                         .pause_ms = gap_ms };
+                         .pause_ms = gap_ms, .bionic = bionic };
           menu_saved = (config_save(&co) == 0) ? 1 : -1;
         } else if(menu_sel == 5){
           int pn = nvoices + 1;
@@ -378,6 +383,11 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
             if(gap_ms < 0) gap_ms = 0;
             if(gap_ms > PAUSE_MAX) gap_ms = PAUSE_MAX;
             break;
+          case 7:
+            bionic = !bionic;
+            if(nsent > 0) apply_base(pad, sent_row, nsent);
+            repaint_pad = 1;
+            break;
         }
       }
 
@@ -389,7 +399,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       }
       if(menu_win)
         draw_settings(menu_win, menu_sel, rate, width, cols, theme_idx, focus,
-                      kara_on, voice, gap_ms, menu_saved);
+                      kara_on, voice, gap_ms, bionic, menu_saved);
       continue;
     }
 
@@ -586,6 +596,18 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       }
     }
 
+    if(character == 'b'){
+      bionic = !bionic;
+      if(nsent > 0){
+        apply_base(pad, sent_row, nsent);
+        goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+        if(kplaying && kara_on){
+          kara_frame(pad, sent_row, cur);
+          prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+        }
+      }
+    }
+
     if(character == ','){
       if(astate != STOPPED){
         stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
@@ -598,7 +620,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
         for(int i = 0; i < nvoices; i++)
           if(strcmp(voice, voices[i]) == 0){ vsel = i; break; }
 
-      int menu_h = 15, menu_w = 54;
+      int menu_h = 16, menu_w = 54;
       if(menu_h > rows) menu_h = rows;
       if(menu_w > cols) menu_w = cols;
       int my = (rows - menu_h) / 2, mx = (cols - menu_w) / 2;
@@ -618,7 +640,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
           prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
         if(sbar) draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
         draw_settings(menu_win, menu_sel, rate, width, cols, theme_idx, focus,
-                      kara_on, voice, gap_ms, menu_saved);
+                      kara_on, voice, gap_ms, bionic, menu_saved);
       }
       continue;
     }
@@ -827,6 +849,7 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   kspan = NULL;
   free(word_cum);
   word_cum = NULL;
+  g_sent = NULL;
   free_sentences(sent, nsent);
   cleanup();
   return 0;
@@ -939,6 +962,8 @@ static WINDOW *build_pad(char **sent, int nsent, int rows, int cols,
     for(int i = 0; i < nsent; i++) free(wrapped[i]);
     free(wrapped);
   }
+  if(bionic && g_sent)
+    for(int i = 0; i < nsent; i++) bionic_line(pad, sent_row, i, A_NORMAL);
   *content_rows = nsent > 0 ? sent_row[nsent] : 0;
   return pad;
 }
@@ -986,12 +1011,28 @@ static void apply_base(WINDOW *pad, const int *sent_row, int nsent){
   int rows = sent_row[nsent];
   for(int r = 0; r < rows; r++)
     mvwchgat(pad, r, text_col, text_width, normal_attr, color_pair, NULL);
+  if(bionic)
+    for(int i = 0; i < nsent; i++) bionic_line(pad, sent_row, i, normal_attr);
+}
+
+static void bionic_line(WINDOW *pad, const int *row, int i, attr_t attr){
+  if(!bionic || g_sent == NULL) return;
+  word_span *sp;
+  int nsp = wrap_words(g_sent[i], text_width, &sp);
+  for(int k = 0; k < nsp; k++){
+    int bold = sp[k].cells / 2;
+    if(bold < 1) bold = 1;
+    mvwchgat(pad, row[i] + sp[k].row, text_col + sp[k].col, bold,
+             attr | A_BOLD, color_pair, NULL);
+  }
+  free(sp);
 }
 
 static void paint_line(WINDOW *pad, const int *row, int i, attr_t attr){
   int end = row[i+1] - line_gap;
   for(int r = row[i]; r < end; r++)
     mvwchgat(pad, r, text_col, text_width, attr, color_pair, NULL);
+  bionic_line(pad, row, i, attr);
 }
 
 static void goto_line(WINDOW *pad, const int *row, int content_rows,
@@ -1109,7 +1150,7 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   r replay   Up/Dn move   / find   o outline   +/- speed   , settings   ? help   f focus   w word   t theme   [ ] width   q quit ";
+  const char *hint = "Space play/pause   r replay   Up/Dn move   / find   o outline   +/- speed   , settings   ? help   f focus   w word   b bionic   t theme   [ ] width   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);

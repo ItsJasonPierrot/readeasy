@@ -159,9 +159,11 @@ Nice-to-haves, none required — the app is feature-complete without them.
 - [x] **Time-remaining in the status bar.** (done 2026-09-22) Estimated from
       words left ÷ rate (per-sentence cumulative word counts), shown as
       `~M:SS left` beside the position.
-- [ ] **Bionic word emphasis.** Bold the first few letters of each word (a
-      dyslexia/ADHD reading aid). Needs per-word attribute runs, which
-      `wrap_words` already locates. **M**
+- [x] **Bionic word emphasis.** (done 2026-09-22) Bolds the first half of each
+      word (`wrap_words` locates the runs; `bionic_line` in `ui.c` applies
+      `attr | A_BOLD` so it combines with the highlight/dim/karaoke instead of
+      replacing them). Toggle `b`; `--bionic` / `--no-bionic`; `bionic on/off`
+      in the config; a Bionic row in the settings menu.
 - [x] **Adjustable pause between sentences.** (done 2026-09-22) A configurable
       gap (0–2000 ms) held between sentences via a `GAP` state in the playback
       loop; tunable in the settings menu and saved as `pause` in the config.

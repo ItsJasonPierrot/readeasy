@@ -15,6 +15,7 @@ typedef struct {
   int width;
   int word_highlight;
   int pause_ms;
+  int bionic;
 } ui_opts;
 
 #define PAUSE_MAX 2000

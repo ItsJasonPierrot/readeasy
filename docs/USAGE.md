@@ -56,6 +56,7 @@ error.
 | `--theme NAME` | Color theme, one of: `none`, `blue`, `cream`, `contrast`, `dark` (default `none`). `cream` is a low-contrast dark-on-cream palette meant to be dyslexia-friendly; `contrast` is white-on-black. Cycle live with `t`. |
 | `--color` | Shorthand for `--theme blue`. (`--no-color` is also accepted and is the default.) |
 | `--no-word-highlight` | Do not light up each word while reading (leave the whole sentence highlighted). Word highlight is on by default; `--word-highlight` forces it on, overriding the config file. Toggle live with `w`. |
+| `--bionic` | Start with bionic emphasis on — bold the first half of each word (a dyslexia/ADHD reading aid). Off by default; `--no-bionic` forces it off. Toggle live with `b`. |
 | `-v`, `--version` | Print the version and exit. |
 | `-h`, `--help` | Print a usage summary and exit. |
 
@@ -87,6 +88,7 @@ While a file is open, these keys work:
 | `-` | Speak slower (decrease words per minute). If reading, the current sentence restarts at the new speed. |
 | `f` | Toggle focus mode (dim all but the current sentence). |
 | `w` | Toggle word highlight (light up each word as it is spoken; on by default). |
+| `b` | Toggle bionic emphasis (bold the first half of each word; off by default). |
 | `t` | Cycle the color theme (none → blue → cream → contrast → dark). |
 | `[` | Narrow the centred reading column. |
 | `]` | Widen the reading column (past full width turns it off). |
@@ -247,8 +249,9 @@ way to change things, with no flags or files to edit:
 
 - **Up / Down** move between settings; **Left / Right** change the selected one
   (`h` / `j` / `k` / `l` work too). The settings are theme, speed, width, focus,
-  word highlight, voice, and the **Pause** between sentences (0–2000 ms). Changes
-  to theme, width, and focus apply immediately behind the menu.
+  word highlight, voice, the **Pause** between sentences (0–2000 ms), and
+  **Bionic** emphasis. Changes to theme, width, focus, and bionic apply
+  immediately behind the menu.
 - On the **Voice** row, press **Enter** to open a scrollable list of every
   installed voice; **Up / Down** to move, **Enter** to choose, **Esc** to
   cancel.
@@ -277,6 +280,7 @@ Recognised keys:
 | `theme` | `none`, `blue`, `cream`, `contrast`, or `dark`. |
 | `focus` | `on` or `off`. |
 | `word_highlight` | `on` or `off` (light up each word while reading; on by default). |
+| `bionic` | `on` or `off` (bold the first half of each word; off by default). |
 | `pause` | Milliseconds of silence between sentences, 0–2000 (0 = none). |
 
 Example `~/.config/readeasy/config`:
