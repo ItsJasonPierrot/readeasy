@@ -9,7 +9,7 @@
 #include "config.h"
 
 #ifndef READEASY_VERSION
-#define READEASY_VERSION "1.5.1"
+#define READEASY_VERSION "1.6.0"
 #endif
 
 static int has_pdf_extension(const char *name){
