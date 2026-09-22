@@ -80,6 +80,8 @@ While a file is open, these keys work:
 | `/` | Search: type a phrase, `Enter` jumps to the next sentence containing it (case-insensitive), `Esc` cancels. |
 | `n` / `N` | Repeat the last search forward / backward. |
 | `o` | Outline: pop a list of the document's headings; `Enter` jumps to one, `Esc` cancels. |
+| `m` | Bookmark the current sentence: type a name (or accept the suggested one) and press `Enter`. Press `m` again on a bookmarked sentence to remove it. |
+| `'` | Go to a bookmark: pop a list of this file's bookmarks; `Enter` jumps to one, `Esc` cancels. |
 | `Space` | Start reading aloud from the cursor sentence; press again to pause. |
 | `r` | Replay the current sentence from the start. |
 | `,` | Open the settings menu (theme, speed, width, voice, focus, word highlight, pause; save to config). |
@@ -113,6 +115,30 @@ shows which sentence you are on.
   cursor sentence. (Moving the cursor with `↑` / `↓` while reading pauses
   playback.)
 - Reading stops on its own at the end of the text.
+
+### Remembering your place and bookmarks
+
+`readeasy` keeps track of where you are in a long document so you never have to
+scroll back to find your spot.
+
+- **Your place is saved automatically.** When you quit (`q`), `readeasy` records
+  the cursor sentence for that file. The next time you open the same file it
+  opens on that sentence and briefly shows *"Resumed where you left off"* in the
+  status bar. Press `Home` (or `g`) to jump back to the top and start over.
+- **Bookmarks.** Press `m` to bookmark the current sentence. A prompt appears in
+  the status bar pre-filled with the start of the sentence as a suggested name —
+  press `Enter` to accept it, or type your own name first. Press `m` again on a
+  sentence you have already bookmarked to remove it.
+- **Jumping to a bookmark.** Press `'` (apostrophe) to pop a list of this file's
+  bookmarks, each shown as its sentence number and name. Move with `↑` / `↓`,
+  press `Enter` to jump there, or `Esc` to cancel.
+
+Positions and bookmarks are stored per file, keyed by the file's full path, in
+`~/.config/readeasy/places` (or `$XDG_CONFIG_HOME/readeasy/places`) — see
+[Configuration file](#configuration-file). Piped input has no path, so it is not
+remembered. If a file changes so much that a saved sentence number no longer
+lines up, `readeasy` quietly falls back to the top and drops any bookmarks that
+fall past the new end.
 
 ### Word highlight
 
@@ -295,6 +321,13 @@ word_highlight on
 
 Unrecognised keys and invalid values are ignored, so a small typo won't stop
 `readeasy` from running.
+
+Separately, `readeasy` keeps your saved reading positions and bookmarks in
+`~/.config/readeasy/places` (same directory, different file). It is managed
+automatically as you read — you never need to edit it — and each line records
+one file's position or one bookmark, keyed by the file's full path. Deleting the
+file simply forgets every saved place and bookmark. See
+[Remembering your place and bookmarks](#remembering-your-place-and-bookmarks).
 
 ---
 

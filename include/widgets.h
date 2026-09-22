@@ -4,6 +4,7 @@
 #include <ncurses.h>
 
 int prompt_search(WINDOW *sbar, int cols, char *buf, int cap);
+int prompt_text(WINDOW *sbar, int cols, const char *label, char *buf, int cap);
 void show_help(int rows, int cols, short color_pair);
 int list_picker(int rows, int cols, const char *title,
                 char **items, int n, int start, short color_pair);

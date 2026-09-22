@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <stdio.h>
+#include <string.h>
 #include "widgets.h"
 #include "ui.h"
 
@@ -23,6 +24,33 @@ int prompt_search(WINDOW *sbar, int cols, char *buf, int cap){
   }
 }
 
+int prompt_text(WINDOW *sbar, int cols, const char *label, char *buf, int cap){
+  int len = (int)strlen(buf);
+  if(len > cap - 1){ len = cap - 1; buf[len] = '\0'; }
+  int llen = (int)strlen(label);
+  int room = cols - llen - 4;
+  if(room < 1) room = 1;
+  curs_set(1);
+  for(;;){
+    werase(sbar);
+    mvwprintw(sbar, 0, 1, "%s: %.*s", label, room, buf);
+    wrefresh(sbar);
+    int c = getch();
+    if(c == '\n' || c == '\r' || c == KEY_ENTER){ curs_set(0); return 1; }
+    if(c == 27){ curs_set(0); return 0; }
+    if(c == KEY_BACKSPACE || c == 127 || c == 8){
+      if(len > 0){
+        len--;
+        while(len > 0 && ((unsigned char)buf[len] & 0xC0) == 0x80) len--;
+        buf[len] = '\0';
+      }
+    } else if(c >= 32 && c < 127 && len < cap - 1){
+      buf[len++] = (char)c;
+      buf[len] = '\0';
+    }
+  }
+}
+
 void show_help(int rows, int cols, short color_pair){
   static const char *keys[] = {
     "Space        play / pause",
@@ -32,6 +60,8 @@ void show_help(int rows, int cols, short color_pair){
     "Home / End   first / last (g / G)",
     "/  n  N      search / next / previous",
     "o            outline (jump by heading)",
+    "m            bookmark this sentence",
+    "'            go to a bookmark",
     "+  /  -      read faster / slower",
     "[  /  ]      narrow / widen column",
     "f            focus mode (dim the rest)",

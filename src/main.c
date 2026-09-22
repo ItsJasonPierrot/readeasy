@@ -165,7 +165,7 @@ int main(int argc, char *argv[]){
 
   const char *name = (file != NULL) ? file : "(stdin)";
 
-  if(run_ui(buffer, name, &opts) != 0){
+  if(run_ui(buffer, name, file, &opts) != 0){
     free(buffer);
     return 1;
   }

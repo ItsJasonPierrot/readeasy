@@ -17,6 +17,8 @@ terminal — no browser, no GUI app. Press one key to start or stop the voice.
 - Follow along as each word lights up while it is spoken.
 - Change theme, speed, width, and voice from an in-app menu — no flags, no
   config editing, and it can save your choices for next time.
+- Pick up right where you left off — `readeasy` remembers your place in each
+  file and lets you drop bookmarks to jump back to.
 - Start and stop the speech whenever you like.
 - Tiny, fast, and written in C.
 
@@ -213,6 +215,8 @@ Once the file is open, use these keys:
 | `Home` / `End` (or `g` / `G`) | Jump to the first or last sentence. |
 | `/` | **Search** — type a phrase and jump to the next sentence that contains it (case-insensitive); `n` / `N` repeat forward / backward. |
 | `o` | **Outline** — pop a list of headings and jump straight to a section. |
+| `m` | **Bookmark** the current sentence (give it a name, or accept the suggested one). Press `m` again on a bookmarked sentence to remove it. |
+| `'` | **Go to a bookmark** — pop a list of this file's bookmarks and jump to one. |
 | `Space` | Start reading aloud from the cursor sentence. Press again to pause; press once more to resume from that same sentence. |
 | `r` | **Replay** the current sentence from the start. |
 | `,` | Open the **settings menu** — change theme, speed, width, voice, focus, word highlight, and the pause between sentences, and save them to your config. |
@@ -236,6 +240,12 @@ A status bar along the bottom shows the file name, your position (sentence
 number, total, and percent), the total word count, whether it is playing or
 paused, the current speaking speed in words per minute, and a reminder of the
 keys.
+
+When you quit, `readeasy` remembers your place in that file, so the next time
+you open it you pick up where you left off (press `Home` to start over). It also
+keeps any bookmarks you dropped with `m`. Your positions and bookmarks live in
+`~/.config/readeasy/places` and are keyed by the file's path; piped input isn't
+remembered.
 
 A full reference — including every error message and limit — is in
 [docs/USAGE.md](docs/USAGE.md).

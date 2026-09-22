@@ -19,7 +19,8 @@ readeasy/
 │   ├── reflow.c    Joins hard-wrapped lines into sentences; wraps/maps words
 │   ├── speech.c    Speech backends: macOS say / Linux espeak-ng; voices
 │   ├── ui.c        Terminal interface, keyboard controls, playback loop
-│   └── widgets.c   Modal overlays: settings menu, list picker, help, search
+│   ├── widgets.c   Modal overlays: settings menu, list picker, help, prompts
+│   └── places.c    Saves reading position + bookmarks per file (the places file)
 ├── include/        Header files (.h) for each source module
 ├── docs/           Documentation
 ├── tests/          Unit tests (test_reflow.c), run with `make test`
@@ -184,6 +185,12 @@ Check that:
 - `b` (or `--bionic` / `bionic on` in the config) bolds the first half of each
   word, and the bold combines with the cursor highlight, focus dim, and word
   highlight rather than replacing them.
+- Quitting a file with the cursor moved, then reopening it by the same path,
+  resumes on that sentence (with a brief "Resumed where you left off" note);
+  `m` bookmarks the current sentence (naming it in the status bar), `m` again
+  removes it, and `'` lists this file's bookmarks and jumps to one. Positions
+  and bookmarks survive a restart (they live in `~/.config/readeasy/places`),
+  are keyed by the file's path, and piped input is not remembered.
 - `,` opens the settings menu: Up/Down and Left/Right (or `h`/`j`/`k`/`l`) move
   and change theme, speed, width, focus, word highlight, and voice; theme/width/
   focus apply live behind the menu; Enter on Voice opens a scrollable picker;

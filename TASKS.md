@@ -1,6 +1,6 @@
 # readeasy — Task List
 
-Last refreshed: 2026-09-21.
+Last refreshed: 2026-09-22.
 
 Mission: make reading easier for **non-technical, neurodivergent users**
 (dyslexia, ADHD, ASD). Priorities are weighted toward accessibility UX and
@@ -149,11 +149,19 @@ where it runs.
 
 ## Optional extras (wishlist)
 
-Nice-to-haves, none required — the app is feature-complete without them.
+Nice-to-haves — the app is feature-complete without them, and the wishlist is
+now cleared.
 
-- [ ] **Remember-your-place + bookmarks.** Save the cursor sentence per file
-      (keyed by path) so a long read resumes where you left off; a key to drop
-      and jump to named bookmarks. Highest comfort value for long reads. **M**
+- [x] **Remember-your-place + bookmarks.** (done 2026-09-22) On quit, the cursor
+      sentence is saved per file (keyed by the canonical path) and restored on the
+      next open, with a brief "Resumed where you left off" note (`Home` starts
+      over). `m` bookmarks the current sentence — a status-bar prompt pre-filled
+      with the sentence text names it — and `m` again removes it; `'` lists this
+      file's bookmarks (sentence number + name) and jumps to one. New `places.c`
+      (`places_load` / `places_save` / `places_free`) stores both in
+      `~/.config/readeasy/places`, a tab-delimited file merged across documents;
+      piped input has no path and isn't remembered, and stale positions/bookmarks
+      past a shrunk file's end are clamped or dropped.
 - [x] **Replay current sentence (`r`).** (done 2026-09-22) `r` re-synthesizes
       and replays the current sentence from the start.
 - [x] **Time-remaining in the status bar.** (done 2026-09-22) Estimated from
@@ -188,6 +196,12 @@ inline.
   characters throw the wrap off by a column. Edge case for this audience.
 - **Word count treats a lone em-dash between spaces as a token**, so counts are
   approximate on punctuation-heavy text.
+- **Saved positions/bookmarks are keyed by sentence index, not content.** If a
+  file is edited between reads, a saved sentence number can land a little off;
+  `readeasy` clamps a resume past the new end back to the top and drops any
+  bookmark whose sentence no longer exists, but it does not diff the text. The
+  `places` file is also tab-delimited, so a file path containing a literal tab
+  (extraordinarily rare) won't round-trip.
 - **The word highlight is time-estimated, not from real word boundaries.** `say`
   exposes no word timings, so each word's turn is its share of the sentence's
   audio duration (from `afinfo`), weighted by length. It re-syncs every

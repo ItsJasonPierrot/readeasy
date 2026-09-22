@@ -21,7 +21,7 @@ typedef struct {
 #define PAUSE_MAX 2000
 #define PAUSE_STEP 100
 
-int run_ui(char *text, const char *name, const ui_opts *opts);
+int run_ui(char *text, const char *name, const char *path, const ui_opts *opts);
 
 int ui_theme_index(const char *name);
 int ui_theme_count(void);

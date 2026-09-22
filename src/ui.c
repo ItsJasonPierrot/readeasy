@@ -12,6 +12,7 @@
 #include "ui.h"
 #include "config.h"
 #include "widgets.h"
+#include "places.h"
 
 enum { STOPPED, SYNTH, PLAY, GAP };
 
@@ -81,6 +82,46 @@ static int count_words(const char *s){
   return n;
 }
 
+static int mark_find(const bookmark *m, int n, int sent){
+  for(int i = 0; i < n; i++) if(m[i].sent == sent) return i;
+  return -1;
+}
+
+static void mark_add(bookmark **m, int *n, int *cap, int sent, const char *name){
+  if(*n == *cap){
+    int nc = *cap ? *cap * 2 : 8;
+    bookmark *g = realloc(*m, (size_t)nc * sizeof(bookmark));
+    if(g == NULL) return;
+    *m = g;
+    *cap = nc;
+  }
+  size_t len = strlen(name) + 1;
+  char *dup = malloc(len);
+  if(dup == NULL) return;
+  memcpy(dup, name, len);
+
+  int i = *n;
+  while(i > 0 && (*m)[i-1].sent > sent){ (*m)[i] = (*m)[i-1]; i--; }
+  (*m)[i].sent = sent;
+  (*m)[i].name = dup;
+  (*n)++;
+}
+
+static void default_label(const char *s, char *out, int cap){
+  while(*s == ' ' || *s == '\t' || *s == '\n' || *s == '\r') s++;
+  int j = 0, max = cap - 1;
+  if(max > 48) max = 48;
+  for(; *s && j < max; s++){
+    char c = *s;
+    out[j++] = (c == '\t' || c == '\n' || c == '\r') ? ' ' : c;
+  }
+  while(j > 0 && ((unsigned char)out[j-1] & 0xC0) == 0x80) j--;
+  if(j > 0 && ((unsigned char)out[j-1] & 0x80)) j--;
+  while(j > 0 && out[j-1] == ' ') j--;
+  out[j] = '\0';
+  if(j == 0) snprintf(out, cap, "bookmark");
+}
+
 static void cleanup(void){
   if(curses_active){
     endwin();
@@ -134,7 +175,7 @@ static int find_match(char **sent, int nsent, int first, const char *q, int dir)
 static int is_heading_sentence(const char *s);
 static void bionic_line(WINDOW *pad, const int *row, int i, attr_t attr);
 
-int run_ui(char *text, const char *name, const ui_opts *opts){
+int run_ui(char *text, const char *name, const char *path, const ui_opts *opts){
   int rows, cols, view_rows, has_status;
   int content_rows;
   int top = 0;
@@ -151,6 +192,10 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
 
   char query[128] = "";
   int have_query = 0;
+
+  bookmark *marks = NULL;
+  int nmarks = 0, cap_marks = 0;
+  int resumed = 0;
 
   int astate = STOPPED;
   int synth_i = -1;
@@ -188,6 +233,19 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
     word_cum[0] = 0;
     for(int i = 0; i < nsent; i++)
       word_cum[i+1] = word_cum[i] + count_words(sent[i]);
+  }
+
+  {
+    int saved_pos = -1;
+    places_load(path, &saved_pos, &marks, &nmarks);
+    cap_marks = nmarks;
+    int w = 0;
+    for(int i = 0; i < nmarks; i++){
+      if(marks[i].sent >= 0 && marks[i].sent < nsent) marks[w++] = marks[i];
+      else free(marks[i].name);
+    }
+    nmarks = w;
+    if(saved_pos > 0 && saved_pos < nsent){ cur = saved_pos; resumed = 1; }
   }
 
   setlocale(LC_ALL, "");
@@ -257,6 +315,12 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
   else
     prefresh(pad, 0, 0, 0, 0, view_rows - 1, cols - 1);
   if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
+  if(resumed && sbar){
+    werase(sbar);
+    mvwprintw(sbar, 0, 1, "%.*s", cols - 2,
+              "Resumed where you left off - press Home to start over");
+    wrefresh(sbar);
+  }
 
   while(1){
     timeout(astate == STOPPED ? -1 : 100);
@@ -608,6 +672,91 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       }
     }
 
+    if(character == 'm' && nsent > 0){
+      int at = mark_find(marks, nmarks, cur);
+      if(at >= 0){
+        free(marks[at].name);
+        for(int i = at; i < nmarks - 1; i++) marks[i] = marks[i+1];
+        nmarks--;
+        if(sbar){
+          werase(sbar);
+          mvwprintw(sbar, 0, 1, "Bookmark removed");
+          wrefresh(sbar);
+        }
+      } else {
+        char nm[80];
+        default_label(sent[cur], nm, sizeof nm);
+        int ok = 1;
+        if(sbar != NULL){
+          if(astate != STOPPED){
+            stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+            kara_stop();
+            paint_line(pad, sent_row, cur, A_REVERSE);
+            prefresh(pad, top, 0, 0, 0, view_rows - 1, cols - 1);
+            astate = STOPPED;
+          }
+          timeout(-1);
+          ok = prompt_text(sbar, cols, "Bookmark", nm, sizeof nm);
+          if(ok && nm[0] == '\0') default_label(sent[cur], nm, sizeof nm);
+        }
+        if(ok){
+          mark_add(&marks, &nmarks, &cap_marks, cur, nm);
+          if(sbar){
+            werase(sbar);
+            mvwprintw(sbar, 0, 1, "Bookmark added");
+            wrefresh(sbar);
+          }
+        } else if(sbar){
+          draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
+        }
+      }
+      continue;
+    }
+
+    if(character == '\'' && nsent > 0){
+      if(astate != STOPPED){
+        stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
+        kara_stop();
+        astate = STOPPED;
+      }
+      if(nmarks == 0){
+        if(sbar){
+          werase(sbar);
+          mvwprintw(sbar, 0, 1, "No bookmarks yet - press m to add one");
+          wrefresh(sbar);
+        }
+        continue;
+      }
+      char *store = malloc((size_t)nmarks * 128);
+      char **items = malloc((size_t)nmarks * sizeof(char *));
+      if(store != NULL && items != NULL){
+        int startsel = 0;
+        for(int i = 0; i < nmarks; i++){
+          items[i] = store + (size_t)i * 128;
+          snprintf(items[i], 128, "%d.  %s", marks[i].sent + 1, marks[i].name);
+          if(marks[i].sent <= cur) startsel = i;
+        }
+        int chosen = list_picker(rows, cols, "Bookmarks", items, nmarks,
+                                 startsel, color_pair);
+        clearok(curscr, TRUE);
+        touchwin(stdscr);
+        refresh();
+        if(chosen >= 0){
+          int old = cur;
+          cur = marks[chosen].sent;
+          if(focus) apply_base(pad, sent_row, nsent);
+          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, old, cur);
+        } else {
+          if(focus) apply_base(pad, sent_row, nsent);
+          goto_line(pad, sent_row, content_rows, view_rows, cols, &top, -1, cur);
+        }
+        if(sbar) draw_status(sbar, name, cur, nsent, 0, rate, words, cols);
+      }
+      free(store);
+      free(items);
+      continue;
+    }
+
     if(character == ','){
       if(astate != STOPPED){
         stop_audio(&synth_pid, &play_pid, &synth_i, &ready);
@@ -839,6 +988,9 @@ int run_ui(char *text, const char *name, const ui_opts *opts){
       kara_advance(pad, sent_row, cur, top, view_rows, cols);
     if(sbar) draw_status(sbar, name, cur, nsent, astate != STOPPED, rate, words, cols);
   }
+
+  if(nsent > 0) places_save(path, cur, marks, nmarks);
+  places_free(marks, nmarks);
 
   if(menu_win) delwin(menu_win);
   free_voices(voices, nvoices);
@@ -1150,7 +1302,7 @@ static void draw_status(WINDOW *sbar, const char *name, int cur, int nsent,
     wprintw(sbar, "%s   (no readable text)", name);
   }
 
-  const char *hint = "Space play/pause   r replay   Up/Dn move   / find   o outline   +/- speed   , settings   ? help   f focus   w word   b bionic   t theme   [ ] width   q quit ";
+  const char *hint = "Space play/pause   r replay   Up/Dn move   / find   o outline   m bookmark   ' bookmarks   +/- speed   , settings   ? help   f focus   w word   b bionic   t theme   [ ] width   q quit ";
   int hlen = (int)strlen(hint);
   if(cols - hlen > getcurx(sbar) + 2)
     mvwprintw(sbar, 0, cols - hlen, "%s", hint);
